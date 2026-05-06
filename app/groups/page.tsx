@@ -47,7 +47,7 @@ export default function GroupsPage() {
           <div className="space-y-4">
             {GROUPS.map(group => (
               <button key={group.id} onClick={() => setSelected(group)} className="w-full text-left" aria-pressed={selected?.id === group.id}>
-                <Card padding="md" className={`hover:shadow-md transition-shadow ${selected?.id === group.id ? 'ring-2' : ''}`} style={selected?.id === group.id ? { ringColor: 'var(--primary-500)' } : {}}>
+                <Card padding="md" className={`hover:shadow-md transition-shadow ${selected?.id === group.id ? 'ring-2 ring-blue-500' : ''}`}>
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="text-sm font-bold" style={{ color: 'var(--gray-900)' }}>{group.name}</h3>
                     <Badge variant="info" size="sm">{group.ticketCount}</Badge>
