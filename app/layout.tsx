@@ -14,30 +14,21 @@ const inter = Inter({ subsets: ['latin'] });
 
 // Comprehensive SEO Metadata
 export const metadata: Metadata = {
-  metadataBase: new URL('https://swifttriage.com'),
+  metadataBase: new URL(process.env.NEXTAUTH_URL || 'https://swift-triage-realistic-it-support-t.vercel.app'),
   
   // Primary Meta Tags
   title: {
-    default: 'SwiftTriage - AI-Powered IT Service Management | ITSM Platform',
+    default: 'SwiftTriage — Agentic AI-Powered IT Support Platform',
     template: '%s | SwiftTriage'
   },
-  description: 'Transform your IT support with SwiftTriage\'s AI-powered ticket triage, real-time analytics, and enterprise-grade ITSM features. 95% faster ticket resolution. Self-hosted and secure.',
+  description: 'SwiftTriage eliminates triage fatigue with autonomous AI ticket classification, routing, and prioritization in under 800ms. Built for enterprise IT teams on Groq LPU + Neon PostgreSQL.',
   keywords: [
-    'ITSM',
-    'IT service management',
-    'helpdesk software',
-    'ticket management',
-    'AI triage',
-    'IT support',
-    'service desk',
-    'self-hosted ITSM',
-    'enterprise IT support',
-    'ticket automation',
-    'IT analytics',
-    'customer support software'
+    'ITSM', 'IT service management', 'AI helpdesk', 'ticket management',
+    'agentic AI', 'IT support automation', 'Groq AI', 'enterprise ITSM',
+    'triage fatigue', 'IT operations', 'service desk AI', 'Next.js ITSM'
   ],
-  authors: [{ name: 'SwiftTriage Team' }],
-  creator: 'SwiftTriage',
+  authors: [{ name: 'Praveen A' }],
+  creator: 'Praveen A',
   publisher: 'SwiftTriage',
   
   // Robots & Indexing

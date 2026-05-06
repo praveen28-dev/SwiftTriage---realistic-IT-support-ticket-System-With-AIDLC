@@ -6,7 +6,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://swifttriage.com';
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://swift-triage-realistic-it-support-t.vercel.app';
   const currentDate = new Date();
 
   return [
@@ -30,6 +30,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: currentDate,
       changeFrequency: 'weekly',
       priority: 0.9,
+    },
+    // Knowledge Base
+    {
+      url: `${baseUrl}/knowledge`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
+    // Community
+    {
+      url: `${baseUrl}/community`,
+      lastModified: currentDate,
+      changeFrequency: 'daily',
+      priority: 0.6,
+    },
+    // Wiki
+    {
+      url: `${baseUrl}/wiki`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly',
+      priority: 0.5,
     },
     // Dashboard (public info page, not the actual dashboard)
     {
