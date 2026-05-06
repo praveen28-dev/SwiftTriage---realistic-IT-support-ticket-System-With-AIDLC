@@ -42,7 +42,7 @@ describe('Preservation Property Tests - Login Functionality', () => {
 
     // Mock signIn - default to success
     vi.mocked(signIn).mockResolvedValue({
-      error: undefined,
+      error: null,
       status: 200,
       ok: true,
       url: null,
@@ -126,7 +126,7 @@ describe('Preservation Property Tests - Login Functionality', () => {
       
       // Setup: Mock successful authentication
       vi.mocked(signIn).mockResolvedValue({
-        error: undefined,
+        error: null,
         status: 200,
         ok: true,
         url: null,
@@ -158,7 +158,7 @@ describe('Preservation Property Tests - Login Functionality', () => {
       
       // Setup: Mock successful authentication
       vi.mocked(signIn).mockResolvedValue({
-        error: undefined,
+        error: null,
         status: 200,
         ok: true,
         url: null,
@@ -235,7 +235,7 @@ describe('Preservation Property Tests - Login Functionality', () => {
           url: null,
         })
         .mockResolvedValueOnce({
-          error: undefined,
+          error: null,
           status: 200,
           ok: true,
           url: null,
@@ -283,7 +283,7 @@ describe('Preservation Property Tests - Login Functionality', () => {
       
       // Setup: Mock successful authentication
       vi.mocked(signIn).mockResolvedValue({
-        error: undefined,
+        error: null,
         status: 200,
         ok: true,
         url: null,
@@ -311,7 +311,7 @@ describe('Preservation Property Tests - Login Functionality', () => {
       
       // Setup: Mock successful authentication
       vi.mocked(signIn).mockResolvedValue({
-        error: undefined,
+        error: null,
         status: 200,
         ok: true,
         url: null,
@@ -349,7 +349,7 @@ describe('Preservation Property Tests - Login Functionality', () => {
         
         // Setup: Mock successful authentication
         vi.mocked(signIn).mockResolvedValue({
-          error: undefined,
+          error: null,
           status: 200,
           ok: true,
           url: null,
@@ -658,7 +658,7 @@ describe('Preservation Property Tests - Login Functionality', () => {
 
       // Setup: Mock successful authentication
       vi.mocked(signIn).mockResolvedValue({
-        error: undefined,
+        error: null,
         status: 200,
         ok: true,
         url: null,

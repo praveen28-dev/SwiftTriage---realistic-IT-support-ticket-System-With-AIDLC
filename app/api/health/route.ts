@@ -4,6 +4,8 @@
  * Always returns HTTP 200; service failures are encoded in the response body.
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/connection';
 import { sql } from 'drizzle-orm';

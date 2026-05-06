@@ -42,7 +42,7 @@ describe('Bug Condition Exploration - Credential Visibility', () => {
 
     // Mock signIn
     vi.mocked(signIn).mockResolvedValue({
-      error: undefined,
+      error: null,
       status: 200,
       ok: true,
       url: null,
@@ -123,8 +123,9 @@ describe('Bug Condition Exploration - Credential Visibility', () => {
     });
 
     it('should hide demo credentials when NODE_ENV is production', () => {
-      // Setup: Production environment
-      process.env.NODE_ENV = 'production';
+      // Setup: Production environment - use Object.defineProperty since NODE_ENV is readonly
+      const originalNodeEnv = process.env.NODE_ENV;
+      Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true, configurable: true });
       delete process.env.NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS;
 
       render(<LoginPage />);
@@ -139,6 +140,9 @@ describe('Bug Condition Exploration - Credential Visibility', () => {
       expect(demoCredentialsHeading).toBeNull();
       expect(userCredential).toBeNull();
       expect(itAdminCredential).toBeNull();
+
+      // Restore
+      Object.defineProperty(process.env, 'NODE_ENV', { value: originalNodeEnv, writable: true, configurable: true });
     });
   });
 
