@@ -1,0 +1,503 @@
+/* ============================================================================
+   SwiftTriage Design System Foundation - Phase 1
+   Professional Enterprise-Grade Design Tokens
+   Version: 2.0
+   ============================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ========================================================================
+       Color System - Professional Enterprise Palette
+       ======================================================================== */
+    
+    /* Primary Brand Colors - Trust & Stability */
+    --primary-900: #0A2540;
+    --primary-800: #0D3A5F;
+    --primary-700: #104E7E;
+    --primary-600: #1565C0;
+    --primary-500: #1976D2;
+    --primary-400: #42A5F5;
+    --primary-300: #90CAF9;
+    --primary-200: #BBDEFB;
+    --primary-100: #E3F2FD;
+    
+    /* Secondary Colors - Success & Action */
+    --success-700: #1B5E20;
+    --success-600: #2E7D32;
+    --success-500: #43A047;
+    --success-400: #66BB6A;
+    --success-300: #81C784;
+    --success-200: #A5D6A7;
+    --success-100: #C8E6C9;
+    
+    /* Alert Colors - Warnings & Errors */
+    --warning-700: #E65100;
+    --warning-600: #F57C00;
+    --warning-500: #FF9800;
+    --warning-400: #FFA726;
+    --warning-300: #FFB74D;
+    --warning-200: #FFCC80;
+    --warning-100: #FFE0B2;
+    
+    --error-700: #B71C1C;
+    --error-600: #C62828;
+    --error-500: #E53935;
+    --error-400: #EF5350;
+    --error-300: #E57373;
+    --error-200: #EF9A9A;
+    --error-100: #FFCDD2;
+    
+    /* Info Colors */
+    --info-700: #01579B;
+    --info-600: #0277BD;
+    --info-500: #0288D1;
+    --info-400: #039BE5;
+    --info-300: #29B6F6;
+    --info-200: #4FC3F7;
+    --info-100: #81D4FA;
+    
+    /* Neutral Grays - Text & Backgrounds */
+    --gray-900: #1A202C;
+    --gray-800: #2D3748;
+    --gray-700: #4A5568;
+    --gray-600: #718096;
+    --gray-500: #A0AEC0;
+    --gray-400: #CBD5E0;
+    --gray-300: #E2E8F0;
+    --gray-200: #EDF2F7;
+    --gray-100: #F7FAFC;
+    --white: #FFFFFF;
+    
+    /* Semantic Colors - Urgency Levels */
+    --critical: #D32F2F;
+    --high: #F57C00;
+    --medium: #FFA726;
+    --low: #66BB6A;
+    
+    /* ========================================================================
+       Typography System
+       ======================================================================== */
+    
+    /* Font Families */
+    --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-body: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+    
+    /* Fluid Typography Scale */
+    --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);      /* 12-14px */
+    --text-sm: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);        /* 14-16px */
+    --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);      /* 16-18px */
+    --text-lg: clamp(1.125rem, 1.05rem + 0.375vw, 1.25rem);    /* 18-20px */
+    --text-xl: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);        /* 20-24px */
+    --text-2xl: clamp(1.5rem, 1.35rem + 0.75vw, 1.875rem);     /* 24-30px */
+    --text-3xl: clamp(1.875rem, 1.65rem + 1.125vw, 2.25rem);   /* 30-36px */
+    --text-4xl: clamp(2.25rem, 1.95rem + 1.5vw, 3rem);         /* 36-48px */
+    --text-5xl: clamp(3rem, 2.55rem + 2.25vw, 3.75rem);        /* 48-60px */
+    
+    /* Line Heights */
+    --leading-tight: 1.25;
+    --leading-snug: 1.375;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.625;
+    --leading-loose: 2;
+    
+    /* Font Weights */
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+    --font-extrabold: 800;
+    --font-black: 900;
+    
+    /* ========================================================================
+       Spacing System - 8px Base Grid
+       ======================================================================== */
+    
+    --space-0: 0;
+    --space-1: 0.25rem;   /* 4px */
+    --space-2: 0.5rem;    /* 8px */
+    --space-3: 0.75rem;   /* 12px */
+    --space-4: 1rem;      /* 16px */
+    --space-5: 1.25rem;   /* 20px */
+    --space-6: 1.5rem;    /* 24px */
+    --space-8: 2rem;      /* 32px */
+    --space-10: 2.5rem;   /* 40px */
+    --space-12: 3rem;     /* 48px */
+    --space-16: 4rem;     /* 64px */
+    --space-20: 5rem;     /* 80px */
+    --space-24: 6rem;     /* 96px */
+    
+    /* ========================================================================
+       Border Radius System
+       ======================================================================== */
+    
+    --radius-sm: 0.25rem;   /* 4px */
+    --radius-md: 0.375rem;  /* 6px */
+    --radius-lg: 0.5rem;    /* 8px */
+    --radius-xl: 0.75rem;   /* 12px */
+    --radius-2xl: 1rem;     /* 16px */
+    --radius-3xl: 1.5rem;   /* 24px */
+    --radius-full: 9999px;  /* Fully rounded */
+    
+    /* ========================================================================
+       Shadow System - Elevation Levels
+       ======================================================================== */
+    
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+    
+    /* ========================================================================
+       Transition System
+       ======================================================================== */
+    
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slower: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* ========================================================================
+       Z-Index System
+       ======================================================================== */
+    
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+  }
+  
+  /* ========================================================================
+     Base Styles
+     ======================================================================== */
+  
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  
+  body {
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    color: var(--gray-900);
+    background-color: var(--gray-100);
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* Typography Elements */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: var(--font-bold);
+    line-height: var(--leading-tight);
+    color: var(--gray-900);
+  }
+  
+  h1 { font-size: var(--text-5xl); }
+  h2 { font-size: var(--text-4xl); }
+  h3 { font-size: var(--text-3xl); }
+  h4 { font-size: var(--text-2xl); }
+  h5 { font-size: var(--text-xl); }
+  h6 { font-size: var(--text-lg); }
+  
+  p {
+    margin-bottom: var(--space-4);
+  }
+  
+  a {
+    color: var(--primary-600);
+    text-decoration: none;
+    transition: color var(--transition-base);
+  }
+  
+  a:hover {
+    color: var(--primary-700);
+  }
+  
+  code, pre {
+    font-family: var(--font-mono);
+  }
+  
+  /* ========================================================================
+     Utility Classes
+     ======================================================================== */
+  
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* ========================================================================
+     Custom Scrollbar - Premium Design
+     ======================================================================== */
+  
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: var(--gray-100);
+    border-radius: var(--radius-full);
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: var(--gray-400);
+    border-radius: var(--radius-full);
+    border: 2px solid var(--gray-100);
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-500);
+  }
+  
+  ::-webkit-scrollbar-thumb:active {
+    background: var(--gray-600);
+  }
+  
+  /* Firefox Scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--gray-400) var(--gray-100);
+  }
+  
+  /* ========================================================================
+     Focus Styles - Accessibility
+     ======================================================================== */
+  
+  *:focus {
+    outline: none;
+  }
+  
+  *:focus-visible {
+    outline: 2px solid var(--primary-600);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  
+  /* ========================================================================
+     Selection Styles
+     ======================================================================== */
+  
+  ::selection {
+    background-color: var(--primary-200);
+    color: var(--primary-900);
+  }
+  
+  ::-moz-selection {
+    background-color: var(--primary-200);
+    color: var(--primary-900);
+  }
+}
+
+/* ============================================================================
+   Component Layer - Reusable Design Patterns
+   ============================================================================ */
+
+@layer components {
+  /* Button Base Styles */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-6);
+    font-family: var(--font-heading);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    line-height: 1;
+    border-radius: var(--radius-lg);
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    white-space: nowrap;
+    user-select: none;
+  }
+  
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  
+  /* Button Variants */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+    color: var(--white);
+    box-shadow: 0 2px 4px rgba(21, 101, 192, 0.2);
+  }
+  
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(21, 101, 192, 0.3);
+  }
+  
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  
+  .btn-secondary {
+    background: var(--white);
+    color: var(--primary-600);
+    border: 2px solid var(--primary-600);
+  }
+  
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--primary-50);
+    border-color: var(--primary-700);
+    color: var(--primary-700);
+  }
+  
+  .btn-success {
+    background: linear-gradient(135deg, var(--success-600) 0%, var(--success-700) 100%);
+    color: var(--white);
+    box-shadow: 0 2px 4px rgba(46, 125, 50, 0.2);
+  }
+  
+  .btn-success:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(46, 125, 50, 0.3);
+  }
+  
+  .btn-danger {
+    background: linear-gradient(135deg, var(--error-600) 0%, var(--error-700) 100%);
+    color: var(--white);
+    box-shadow: 0 2px 4px rgba(198, 40, 40, 0.2);
+  }
+  
+  .btn-danger:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(198, 40, 40, 0.3);
+  }
+  
+  /* Card Styles */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-200);
+    transition: all var(--transition-base);
+  }
+  
+  .card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+  
+  /* Input Styles */
+  .input {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    color: var(--gray-900);
+    background: var(--white);
+    border: 2px solid var(--gray-300);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-base);
+  }
+  
+  .input:hover:not(:focus) {
+    border-color: var(--gray-400);
+  }
+  
+  .input:focus {
+    border-color: var(--primary-600);
+    box-shadow: 0 0 0 4px rgba(21, 101, 192, 0.1);
+  }
+  
+  .input.error {
+    border-color: var(--error-500);
+  }
+  
+  .input.error:focus {
+    box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.1);
+  }
+  
+  /* Badge Styles */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    border-radius: var(--radius-full);
+  }
+  
+  .badge-success {
+    background: var(--success-100);
+    color: var(--success-700);
+  }
+  
+  .badge-warning {
+    background: var(--warning-100);
+    color: var(--warning-700);
+  }
+  
+  .badge-error {
+    background: var(--error-100);
+    color: var(--error-700);
+  }
+  
+  .badge-info {
+    background: var(--info-100);
+    color: var(--info-700);
+  }
+}
+
+/* ============================================================================
+   Utility Layer - Helper Classes
+   ============================================================================ */
+
+@layer utilities {
+  /* Glassmorphism Effect */
+  .glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  
+  /* Gradient Text */
+  .gradient-text {
+    background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-400) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Smooth Scroll */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+  }
+  
+  /* Hide Scrollbar */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

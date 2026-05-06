@@ -1,0 +1,17 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Lightning Bolt Icon -->
+  <defs>
+    <filter id="logoShadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+  
+  <g filter="url(#logoShadow)">
+    <path d="M110 30L60 110H95L75 170L140 90H105L125 30Z" 
+          fill="#1565C0" 
+          stroke="#1565C0" 
+          stroke-width="4" 
+          stroke-linejoin="round"
+          stroke-linecap="round"/>
+  </g>
+</svg>

@@ -1,0 +1,116 @@
+# Implementation Plan
+
+- [ ] 1. Write bug condition exploration test
+  - **Property 1: Bug Condition** - API Routes Static Generation Failure
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate the bug exists
+  - **Scoped PBT Approach**: For deterministic bugs, scope the property to the concrete failing case(s) to ensure reproducibility
+  - Test implementation details from Bug Condition in design:
+    - Verify build process fails for routes using `headers()` without explicit dynamic config
+    - Test routes: `/api/v1/tickets/stats`, `/api/dashboard`, `/api/v1/activity-feed`, `/api/stats`
+    - Assert that build output contains "Dynamic server usage" errors for each route
+    - Assert error messages mention "couldn't be rendered statically because it used `headers`"
+  - The test assertions should match the Expected Behavior Properties from design
+  - Run test on UNFIXED code (run `npm run build` and capture errors)
+  - **EXPECTED OUTCOME**: Test FAILS (this is correct - it proves the bug exists)
+  - Document counterexamples found to understand root cause:
+    - Capture exact error messages for each route
+    - Verify all four routes produce expected errors
+    - Confirm build completes but shows errors during static generation phase
+  - Mark task complete when test is written, run, and failure is documented
+  - _Requirements: 1.1, 1.2, 1.3_
+
+- [ ] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - Runtime Behavior Unchanged
+  - **IMPORTANT**: Follow observation-first methodology
+  - Observe behavior on UNFIXED code for non-buggy inputs:
+    - Test authentication flow with valid session tokens
+    - Test authentication flow with invalid/expired sessions
+    - Test query parameter parsing for each route
+    - Test response format and data structure
+    - Test error handling for invalid inputs
+  - Write property-based tests capturing observed behavior patterns from Preservation Requirements:
+    - For all authenticated requests, verify session validation works correctly
+    - For all query parameter combinations, verify responses are well-formed
+    - For all routes, verify response schemas match expected structure
+    - For all error scenarios, verify error status codes and messages are correct
+  - Property-based testing generates many test cases for stronger guarantees
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3, 3.4_
+
+- [ ] 3. Fix for Next.js API route static generation errors
+
+  - [ ] 3.1 Add dynamic export to /api/v1/tickets/stats route
+    - Open `app/api/v1/tickets/stats/route.ts`
+    - Add after imports: `export const dynamic = 'force-dynamic';`
+    - Add comment: `// Force dynamic rendering - this route uses headers() for authentication`
+    - Verify no other code changes are made
+    - _Bug_Condition: isBugCondition(route) where route.usesHeadersFunction() == true AND route.hasExplicitDynamicConfig() == false_
+    - _Expected_Behavior: Route is marked as dynamic, build succeeds, route executes at runtime_
+    - _Preservation: Authentication logic, database queries, response formatting, error handling remain unchanged_
+    - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4_
+
+  - [ ] 3.2 Add dynamic export to /api/dashboard route
+    - Open `app/api/dashboard/route.ts`
+    - Add after imports: `export const dynamic = 'force-dynamic';`
+    - Add comment: `// Force dynamic rendering - this route uses headers() for authentication`
+    - Verify no other code changes are made
+    - _Bug_Condition: isBugCondition(route) where route.usesHeadersFunction() == true AND route.hasExplicitDynamicConfig() == false_
+    - _Expected_Behavior: Route is marked as dynamic, build succeeds, route executes at runtime_
+    - _Preservation: Authentication logic, database queries, response formatting, error handling remain unchanged_
+    - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4_
+
+  - [ ] 3.3 Add dynamic export to /api/v1/activity-feed route
+    - Open `app/api/v1/activity-feed/route.ts`
+    - Add after imports: `export const dynamic = 'force-dynamic';`
+    - Add comment: `// Force dynamic rendering - this route uses headers() for authentication`
+    - Verify no other code changes are made
+    - _Bug_Condition: isBugCondition(route) where route.usesHeadersFunction() == true AND route.hasExplicitDynamicConfig() == false_
+    - _Expected_Behavior: Route is marked as dynamic, build succeeds, route executes at runtime_
+    - _Preservation: Authentication logic, database queries, response formatting, error handling remain unchanged_
+    - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4_
+
+  - [ ] 3.4 Add dynamic export to /api/stats route
+    - Open `app/api/stats/route.ts`
+    - Add after imports: `export const dynamic = 'force-dynamic';`
+    - Add comment: `// Force dynamic rendering - this route uses headers() for authentication`
+    - Verify no other code changes are made
+    - _Bug_Condition: isBugCondition(route) where route.usesHeadersFunction() == true AND route.hasExplicitDynamicConfig() == false_
+    - _Expected_Behavior: Route is marked as dynamic, build succeeds, route executes at runtime_
+    - _Preservation: Authentication logic, database queries, response formatting, error handling remain unchanged_
+    - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4_
+
+  - [ ] 3.5 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - API Routes Build Successfully
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior
+    - When this test passes, it confirms the expected behavior is satisfied
+    - Run bug condition exploration test from step 1 (run `npm run build`)
+    - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed)
+    - Verify build completes successfully without errors
+    - Verify no "Dynamic server usage" errors appear in build output
+    - Verify all four routes build without errors
+    - _Requirements: 2.1, 2.2, 2.3_
+
+  - [ ] 3.6 Verify preservation tests still pass
+    - **Property 2: Preservation** - Runtime Behavior Unchanged
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run preservation property tests from step 2
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
+    - Confirm all tests still pass after fix (no regressions):
+      - Authentication flow works identically
+      - Query parameter parsing unchanged
+      - Response formats and data structures identical
+      - Error handling and status codes unchanged
+    - _Requirements: 3.1, 3.2, 3.3, 3.4_
+
+- [ ] 4. Checkpoint - Ensure all tests pass
+  - Run complete test suite to verify all tests pass
+  - Verify build completes successfully without any errors
+  - Verify all four API routes are accessible at runtime
+  - Verify authentication works correctly for all routes
+  - Ask the user if questions arise

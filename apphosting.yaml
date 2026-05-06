@@ -1,0 +1,46 @@
+runConfig:
+  runtime: nodejs20
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0
+  maxInstances: 10
+
+env:
+  # NextAuth configuration
+  - variable: NEXTAUTH_URL
+    value: https://swifttriage--default.us-central1.hosted.app
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXTAUTH_SECRET
+    secret: NEXTAUTH_SECRET
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # Neon PostgreSQL connection string
+  - variable: DATABASE_URL
+    secret: DATABASE_URL
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # Groq AI API key
+  - variable: GROQ_API_KEY
+    secret: GROQ_API_KEY
+    availability:
+      - RUNTIME
+
+  # App configuration
+  - variable: NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS
+    value: "false"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NODE_OPTIONS
+    value: "--max-old-space-size=4096"
+    availability:
+      - BUILD
