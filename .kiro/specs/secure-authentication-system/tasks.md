@@ -195,13 +195,13 @@ This implementation plan converts the secure authentication system design into a
     - Test `requireRole` throws for user with insufficient role
     - _Requirements: 5.6, 6.6_
 
-- [-] 11. Checkpoint - Verify authentication infrastructure
+- [x] 11. Checkpoint - Verify authentication infrastructure
   - Ensure all tests pass, ask the user if questions arise.
 
 ### Phase 4: Middleware & RBAC (Authorization Layer)
 
-- [~] 12. Implement RBAC middleware
-  - [~] 12.1 Create Next.js middleware for route protection
+- [x] 12. Implement RBAC middleware
+  - [x] 12.1 Create Next.js middleware for route protection
     - Create or update `middleware.ts` file in project root
     - Import `getToken` from `next-auth/jwt`
     - Implement middleware function that validates JWT tokens
@@ -217,7 +217,7 @@ This implementation plan converts the secure authentication system design into a
     - Configure matcher for protected routes (dashboard, submit, API routes)
     - _Requirements: 5.5, 5.6, 5.7, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
   
-  - [~] 12.2 Write integration tests for RBAC middleware
+  - [x] 12.2 Write integration tests for RBAC middleware
     - Test unauthenticated user redirected to login
     - Test authenticated user with sufficient role allowed access
     - Test authenticated user with insufficient role receives 403
@@ -343,8 +343,8 @@ This implementation plan converts the secure authentication system design into a
     - Test logs use structured JSON format
     - _Requirements: 13.1, 13.2, 13.3, 13.6_
 
-- [~] 18. Create 403 Forbidden page
-  - [~] 18.1 Create access denied page
+- [x] 18. Create 403 Forbidden page
+  - [x] 18.1 Create access denied page
     - Create `app/403/page.tsx` file
     - Display user-friendly "Access Denied" message
     - Explain insufficient permissions
