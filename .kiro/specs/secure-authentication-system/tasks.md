@@ -163,8 +163,8 @@ This implementation plan converts the secure authentication system design into a
     - Test generic error message for failed login (no username/password leak)
     - _Requirements: 3.4, 3.5, 4.4, 5.4, 9.6_
 
-- [~] 9. Implement logout functionality
-  - [~] 9.1 Create logout endpoint
+- [x] 9. Implement logout functionality
+  - [x] 9.1 Create logout endpoint
     - Create `app/api/logout/route.ts` file
     - Implement POST handler that clears NextAuth session cookie
     - Set cookie expiration to past date (Thu, 01 Jan 1970 00:00:00 GMT)
@@ -172,14 +172,14 @@ This implementation plan converts the secure authentication system design into a
     - Return HTTP 200 OK with success message
     - _Requirements: 11.3, 11.4_
   
-  - [~] 9.2 Write unit tests for logout endpoint
+  - [x] 9.2 Write unit tests for logout endpoint
     - Test logout clears session cookie
     - Test logout returns 200 OK
     - Test cookie has past expiration date
     - _Requirements: 11.3, 11.4_
 
-- [~] 10. Implement session management utilities
-  - [~] 10.1 Create authentication helper functions
+- [x] 10. Implement session management utilities
+  - [x] 10.1 Create authentication helper functions
     - Create `lib/auth/auth-utils.ts` file
     - Implement `getAuthSession()` function using `getServerSession(authOptions)`
     - Implement `requireAuth()` function that throws if not authenticated
@@ -187,7 +187,7 @@ This implementation plan converts the secure authentication system design into a
     - Export functions for use in API routes and server components
     - _Requirements: 5.5, 5.6, 6.1, 6.2_
   
-  - [~] 10.2 Write unit tests for auth utilities
+  - [x] 10.2 Write unit tests for auth utilities
     - Test `getAuthSession` returns session for authenticated user
     - Test `getAuthSession` returns null for unauthenticated user
     - Test `requireAuth` throws for unauthenticated user
@@ -195,7 +195,7 @@ This implementation plan converts the secure authentication system design into a
     - Test `requireRole` throws for user with insufficient role
     - _Requirements: 5.6, 6.6_
 
-- [~] 11. Checkpoint - Verify authentication infrastructure
+- [-] 11. Checkpoint - Verify authentication infrastructure
   - Ensure all tests pass, ask the user if questions arise.
 
 ### Phase 4: Middleware & RBAC (Authorization Layer)

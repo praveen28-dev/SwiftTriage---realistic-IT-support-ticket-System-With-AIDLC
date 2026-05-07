@@ -10,8 +10,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireRole } from '@/lib/auth/auth-utils';
 import { GetUsersResponse, User } from '@/types/api';
 
 // TODO: Replace with database query when users table is available
@@ -46,21 +45,24 @@ const MOCK_USERS: User[] = [
  */
 export async function GET() {
   try {
-    // Validate session and role
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const userRole = (session.user as { role?: string }).role;
-    if (userRole !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Validate session and require ADMIN role using auth utilities
+    await requireRole(['ADMIN']);
 
     const response: GetUsersResponse = { users: MOCK_USERS };
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
     console.error('Error fetching users:', error);
+    
+    // Handle authentication and authorization errors
+    if (error instanceof Error) {
+      if (error.message === 'Unauthorized') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      if (error.message === 'Forbidden') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
+    
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
