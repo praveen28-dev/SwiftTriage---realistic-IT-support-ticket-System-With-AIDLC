@@ -83,23 +83,19 @@ describe('RBAC Middleware', () => {
       expect(location).toContain('dashboard%2Fadmin');
     });
 
-    it('should log unauthenticated access attempt', async () => {
+    it('should redirect unauthenticated user accessing API route', async () => {
       vi.mocked(nextAuthJwt.getToken).mockResolvedValue(null);
 
       const request = new NextRequest(
-        new URL('http://localhost:3000/dashboard')
+        new URL('http://localhost:3000/api/tickets')
       );
 
-      await middleware(request);
+      const response = await middleware(request);
 
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        '[RBAC Middleware] Unauthenticated access attempt:',
-        expect.objectContaining({
-          pathname: '/dashboard',
-          timestamp: expect.any(String),
-        })
-      );
+      expect(response.status).toBe(307);
+      expect(response.headers.get('location')).toContain('/login');
     });
+  });
 
     it('should redirect unauthenticated user accessing API route', async () => {
       vi.mocked(nextAuthJwt.getToken).mockResolvedValue(null);
@@ -225,17 +221,14 @@ describe('RBAC Middleware', () => {
         new URL('http://localhost:3000/dashboard')
       );
 
+      mockConsoleLog.mockClear();
+      mockConsoleError.mockClear();
+
       await middleware(request);
 
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        '[RBAC Middleware] Authorization success:',
-        expect.objectContaining({
-          userId: 'user-123',
-          userRole: 'it_staff',
-          requestedResource: '/dashboard',
-          timestamp: expect.any(String),
-        })
-      );
+      // Middleware doesn't log successful authorization to avoid log noise
+      expect(mockConsoleLog).not.toHaveBeenCalled();
+      expect(mockConsoleError).not.toHaveBeenCalled();
     });
   });
 
@@ -304,15 +297,18 @@ describe('RBAC Middleware', () => {
 
       await middleware(request);
 
+      // Expect JSON string format from auth-logger
       expect(mockConsoleError).toHaveBeenCalledWith(
-        '[RBAC Middleware] Authorization failure:',
-        expect.objectContaining({
-          userId: 'user-456',
-          userRole: 'end_user',
-          requestedResource: '/dashboard',
-          requiredRoles: ['it_staff', 'ADMIN'],
-          timestamp: expect.any(String),
-        })
+        expect.stringContaining('"event":"authorization_failure"')
+      );
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        expect.stringContaining('"userId":"user-456"')
+      );
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        expect.stringContaining('"userRole":"end_user"')
+      );
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        expect.stringContaining('"resource":"/dashboard"')
       );
     });
 
@@ -539,7 +535,11 @@ describe('RBAC Middleware', () => {
 
   describe('Logging Behavior', () => {
     it('should log timestamp in ISO format', async () => {
-      vi.mocked(nextAuthJwt.getToken).mockResolvedValue(null);
+      vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+        role: 'end_user',
+        userId: 'user-456',
+        email: 'user@example.com',
+      } as any);
 
       const request = new NextRequest(
         new URL('http://localhost:3000/dashboard')
@@ -547,13 +547,9 @@ describe('RBAC Middleware', () => {
 
       await middleware(request);
 
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        '[RBAC Middleware] Unauthenticated access attempt:',
-        expect.objectContaining({
-          timestamp: expect.stringMatching(
-            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
-          ),
-        })
+      // Expect JSON string with ISO timestamp
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        expect.stringMatching(/"timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z"/)
       );
     });
 
@@ -570,16 +566,14 @@ describe('RBAC Middleware', () => {
 
       await middleware(request);
 
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        '[RBAC Middleware] Authorization failure:',
-        expect.objectContaining({
-          userId: expect.any(String),
-          userRole: expect.any(String),
-          requestedResource: expect.any(String),
-          requiredRoles: expect.any(Array),
-          timestamp: expect.any(String),
-        })
-      );
+      // Expect JSON string with all required fields
+      const logCall = mockConsoleError.mock.calls[0][0];
+      expect(logCall).toContain('"event":"authorization_failure"');
+      expect(logCall).toContain('"userId":"user-456"');
+      expect(logCall).toContain('"userRole":"end_user"');
+      expect(logCall).toContain('"resource":"/dashboard"');
+      expect(logCall).toContain('"requiredRole":"it_staff or ADMIN"');
+      expect(logCall).toContain('"timestamp"');
     });
 
     it('should not log for routes without specific role requirements', async () => {
@@ -599,8 +593,8 @@ describe('RBAC Middleware', () => {
 
       await middleware(request);
 
-      // Should log success, not error
-      expect(mockConsoleLog).toHaveBeenCalled();
+      // Should not log anything for successful authorization
+      expect(mockConsoleLog).not.toHaveBeenCalled();
       expect(mockConsoleError).not.toHaveBeenCalled();
     });
   });

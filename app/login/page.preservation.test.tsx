@@ -18,7 +18,13 @@ import { useRouter } from 'next/navigation';
 import * as fc from 'fast-check';
 
 // Mock Next.js modules
-vi.mock('next-auth/react');
+vi.mock('next-auth/react', () => ({
+  signIn: vi.fn(),
+  useSession: vi.fn(() => ({
+    data: null,
+    status: 'unauthenticated',
+  })),
+}));
 vi.mock('next/navigation');
 
 describe('Preservation Property Tests - Login Functionality', () => {
