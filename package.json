@@ -12,6 +12,14 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:auth": "playwright test e2e/auth.spec.ts",
+    "test:e2e:triage": "playwright test e2e/ticket-triage.spec.ts",
+    "test:e2e:dashboard": "playwright test e2e/dashboard-kanban.spec.ts",
+    "test:e2e:a11y": "playwright test e2e/accessibility.spec.ts",
     "db:generate": "drizzle-kit generate:pg",
     "db:push": "drizzle-kit push:pg"
   },
@@ -34,6 +42,7 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
