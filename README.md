@@ -300,7 +300,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ by the SwiftTriage Team**
+**Built with ❤️ by the Praveen**
 
 **Version**: 1.0.0  
 **Last Updated**: May 5, 2026
