@@ -41,7 +41,7 @@ export const customers = pgTable('customers', {
 export const tickets = pgTable('tickets', {
   id: uuid('id').primaryKey().defaultRandom(),
   customerId: uuid('customer_id').references(() => customers.id),
-  submittedBy: varchar('submitted_by', { length: 255 }), // CRIT-02: track submitter identity
+  submittedBy: varchar('submitted_by', { length: 255 }).notNull().default('anonymous'), // CRIT-02: track submitter identity
   userInput: text('user_input').notNull(),
   category: varchar('category', { length: 50 }).notNull(),
   urgencyScore: integer('urgency_score').notNull(),
