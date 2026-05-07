@@ -3,7 +3,7 @@
  * Enterprise ITSM Database Schema
  */
 
-import { pgTable, uuid, text, varchar, integer, timestamp, decimal, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, varchar, integer, timestamp, decimal, boolean, index } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // ─── Users Table (CRIT-01: database-backed auth with hashed passwords) ────────
@@ -16,7 +16,11 @@ export const users = pgTable('users', {
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (table) => ({
+  // Indexes for authentication performance
+  emailIdx: index('idx_users_email').on(table.email),
+  roleIdx: index('idx_users_role').on(table.role),
+}));
 
 // Customers Table
 export const customers = pgTable('customers', {

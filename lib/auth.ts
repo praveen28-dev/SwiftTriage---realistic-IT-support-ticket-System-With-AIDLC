@@ -1,10 +1,13 @@
 /**
  * NextAuth Configuration
  *
- * Security fixes applied:
- * CRIT-01 — Replaced username-pattern role assignment with database-backed
- *            credential verification using bcryptjs password hashing.
- *            Role is now read from the users table, not inferred from the username.
+ * Security Implementation:
+ * - Credentials-only authentication (no OAuth providers)
+ * - bcryptjs password hashing with constant-time comparison
+ * - JWT session strategy with 8-hour expiration
+ * - Role-based access control (RBAC) via JWT token
+ * - Backend validation using Zod schemas
+ * - HttpOnly cookies for token storage
  */
 
 import { NextAuthOptions } from 'next-auth';
@@ -14,27 +17,41 @@ import { db } from '@/lib/db/connection';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { config } from '@/lib/config';
+import { loginSchema } from '@/lib/validations/auth';
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        username: { label: 'Username', type: 'text' },
+        email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         // Reject immediately if either field is missing
-        if (!credentials?.username || !credentials?.password) {
+        if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
         try {
-          // 1. Look up user in the database by username
+          // Backend validation using Zod schema
+          const validationResult = loginSchema.safeParse({
+            email: credentials.email,
+            password: credentials.password,
+          });
+
+          if (!validationResult.success) {
+            console.error('[auth] Validation failed:', validationResult.error);
+            return null;
+          }
+
+          const { email, password } = validationResult.data;
+
+          // 1. Look up user in the database by email
           const [user] = await db
             .select()
             .from(users)
-            .where(eq(users.username, credentials.username))
+            .where(eq(users.email, email))
             .limit(1);
 
           // 2. User not found — return null (do NOT reveal whether user exists)
@@ -44,7 +61,7 @@ export const authOptions: NextAuthOptions = {
 
           // 3. Constant-time bcrypt comparison — prevents timing attacks
           const isValidPassword = await bcrypt.compare(
-            credentials.password,
+            password,
             user.passwordHash
           );
 
@@ -52,7 +69,7 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          // 4. Return user object — role comes from DB, never from username pattern
+          // 4. Return user object — role comes from DB for RBAC
           return {
             id: user.id,
             name: user.username,

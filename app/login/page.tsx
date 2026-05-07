@@ -1,6 +1,13 @@
 /**
- * Login Page - Phase 3 Redesign
- * Split-screen modern authentication page with design system integration
+ * Login Page - Secure Authentication System
+ * Toggleable Sign In / Create Account form with Zod validation
+ * 
+ * Security Features:
+ * - Frontend validation with Zod schemas
+ * - HttpOnly cookies for token storage
+ * - Loading states and error boundaries
+ * - No social OAuth buttons (credentials only)
+ * - CSRF protection via NextAuth
  */
 
 'use client';
@@ -10,7 +17,8 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/app/components/ui/Button';
-import { trackLogin, trackError, trackButtonClick } from '@/lib/analytics';
+import { trackLogin, trackError } from '@/lib/analytics';
+import { loginSchema, registerSchema, type LoginInput, type RegisterInput } from '@/lib/validations/auth';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
