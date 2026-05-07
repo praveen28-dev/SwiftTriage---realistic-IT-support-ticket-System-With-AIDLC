@@ -227,7 +227,7 @@ This implementation plan converts the secure authentication system design into a
     - Test end_user can access submit but not dashboard
     - _Requirements: 5.7, 6.1, 6.2, 6.6, 6.7_
 
-- [~] 13. Implement role-based redirection
+- [-] 13. Implement role-based redirection
   - [~] 13.1 Create post-login redirection logic
     - Update `lib/auth.ts` NextAuth configuration
     - Add `redirect` callback to handle post-login redirection

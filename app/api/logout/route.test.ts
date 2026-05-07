@@ -107,7 +107,12 @@ describe('POST /api/logout', () => {
       
       if (expiresDate) {
         const pastDate = new Date('Thu, 01 Jan 1970 00:00:00 GMT');
-        expect(expiresDate.getTime()).toBe(pastDate.getTime());
+        // Handle both Date and number types
+        if (expiresDate instanceof Date) {
+          expect(expiresDate.getTime()).toBe(pastDate.getTime());
+        } else if (typeof expiresDate === 'number') {
+          expect(expiresDate).toBe(pastDate.getTime());
+        }
       }
     });
 

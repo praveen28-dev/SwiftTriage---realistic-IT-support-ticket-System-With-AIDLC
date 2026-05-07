@@ -731,7 +731,7 @@ describe('NextAuth Configuration', () => {
     it('should have secret configured', () => {
       expect(authOptions.secret).toBeDefined();
       expect(typeof authOptions.secret).toBe('string');
-      expect(authOptions.secret.length).toBeGreaterThan(0);
+      expect((authOptions.secret ?? '').length).toBeGreaterThan(0);
     });
   });
 });
