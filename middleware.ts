@@ -24,6 +24,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { logAuthorizationFailure } from '@/lib/logging/auth-logger';
 
 /**
  * Role requirements map for protected routes
@@ -107,10 +108,8 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('callbackUrl', request.url);
     
-    console.log('[RBAC Middleware] Unauthenticated access attempt:', {
-      pathname,
-      timestamp: new Date().toISOString(),
-    });
+    // Note: We don't log unauthenticated access attempts as they are expected
+    // and would create excessive log noise
     
     const response = NextResponse.redirect(loginUrl);
     return applySecurityHeaders(response);
@@ -124,14 +123,13 @@ export async function middleware(request: NextRequest) {
   for (const [route, allowedRoles] of Object.entries(roleRequirements)) {
     if (pathname.startsWith(route)) {
       if (!allowedRoles.includes(userRole)) {
-        // User has insufficient permissions - log and return 403
-        console.error('[RBAC Middleware] Authorization failure:', {
+        // User has insufficient permissions - log with structured logging
+        logAuthorizationFailure(
           userId,
-          userRole,
-          requestedResource: pathname,
-          requiredRoles: allowedRoles,
-          timestamp: new Date().toISOString(),
-        });
+          pathname,
+          allowedRoles.join(' or '),
+          userRole
+        );
         
         // Redirect to 403 Forbidden page
         const forbiddenUrl = new URL('/403', request.url);
@@ -140,12 +138,7 @@ export async function middleware(request: NextRequest) {
       }
       
       // User has sufficient permissions - allow access
-      console.log('[RBAC Middleware] Authorization success:', {
-        userId,
-        userRole,
-        requestedResource: pathname,
-        timestamp: new Date().toISOString(),
-      });
+      // Note: We don't log successful authorization as it would create excessive log noise
       
       const response = NextResponse.next();
       return applySecurityHeaders(response);

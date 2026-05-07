@@ -10,6 +10,8 @@
  * - Block duration: 15 minutes
  */
 
+import { logRateLimitBlocked } from '@/lib/logging/auth-logger';
+
 export interface RateLimiterConfig {
   maxAttempts: number;      // Maximum failed attempts allowed
   windowMs: number;         // Time window in milliseconds
@@ -55,6 +57,9 @@ export class RateLimiter {
 
     // Check if currently blocked
     if (record.blockedUntil && now < record.blockedUntil) {
+      // Log blocked attempt with structured logging
+      const blockedMinutes = Math.ceil((record.blockedUntil - now) / 60000);
+      logRateLimitBlocked(ip, record.count, blockedMinutes);
       return false;
     }
 

@@ -32,6 +32,10 @@ import { eq } from 'drizzle-orm';
 import { registerSchema } from '@/lib/validations/auth';
 import { rateLimiter } from '@/lib/auth/rate-limiter';
 import { getClientIp } from '@/lib/utils/ip';
+import {
+  logRegistrationSuccess,
+  logRegistrationFailure,
+} from '@/lib/logging/auth-logger';
 
 // Force dynamic rendering (prevent static generation)
 export const dynamic = 'force-dynamic';
@@ -46,12 +50,8 @@ export async function POST(request: NextRequest) {
       const blockedTime = rateLimiter.getBlockedTimeRemaining(clientIp);
       const blockedMinutes = Math.ceil(blockedTime / 60000);
 
-      // Log rate limit violation
-      console.warn('[register] Rate limit exceeded:', {
-        ip: clientIp,
-        timestamp,
-        blockedMinutes,
-      });
+      // Log rate limit violation (handled by rate limiter)
+      // Note: Rate limiter logs blocked attempts automatically
 
       return NextResponse.json(
         {
@@ -72,12 +72,8 @@ export async function POST(request: NextRequest) {
       // Record failed attempt for rate limiting
       rateLimiter.recordFailure(clientIp);
 
-      // Log validation failure
-      console.warn('[register] Validation failed:', {
-        ip: clientIp,
-        timestamp,
-        errors: validationResult.error.flatten().fieldErrors,
-      });
+      // Log validation failure with structured logging
+      logRegistrationFailure(clientIp, 'validation_error');
 
       return NextResponse.json(
         {
@@ -101,12 +97,8 @@ export async function POST(request: NextRequest) {
       // Record failed attempt for rate limiting
       rateLimiter.recordFailure(clientIp);
 
-      // Log duplicate email attempt
-      console.warn('[register] Email already exists:', {
-        ip: clientIp,
-        email,
-        timestamp,
-      });
+      // Log duplicate email attempt with structured logging
+      logRegistrationFailure(clientIp, 'email_exists', email);
 
       return NextResponse.json(
         { error: 'Email already exists' },
@@ -153,14 +145,8 @@ export async function POST(request: NextRequest) {
     // Reset rate limiter on successful registration
     rateLimiter.reset(clientIp);
 
-    // Log successful registration (without sensitive data)
-    console.log('[register] Registration successful:', {
-      ip: clientIp,
-      userId: newUser.id,
-      email: newUser.email,
-      role: newUser.role,
-      timestamp,
-    });
+    // Log successful registration with structured logging (without sensitive data)
+    logRegistrationSuccess(newUser.id, newUser.email, clientIp, newUser.role);
 
     // Return 201 Created with user details (excluding password hash)
     return NextResponse.json(
@@ -174,12 +160,11 @@ export async function POST(request: NextRequest) {
     // Record failed attempt for rate limiting
     rateLimiter.recordFailure(clientIp);
 
-    // Log error server-side (without sensitive data)
-    console.error('[register] Registration error:', {
-      ip: clientIp,
-      timestamp,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
+    // Log error with structured logging (without sensitive data)
+    logRegistrationFailure(
+      clientIp,
+      error instanceof Error ? error.message : 'unknown_error'
+    );
 
     // Return generic error to client (don't leak implementation details)
     return NextResponse.json(

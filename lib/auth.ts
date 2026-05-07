@@ -22,6 +22,7 @@ import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { config } from '@/lib/config';
 import { loginSchema } from '@/lib/validations/auth';
+import { logAuthSuccess, logAuthFailure } from '@/lib/logging/auth-logger';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -31,11 +32,16 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         // Reject immediately if either field is missing
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
+
+        // Extract IP address for logging (from NextAuth request object)
+        const ip = req?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
+                   req?.headers?.['x-real-ip'] ||
+                   'unknown';
 
         try {
           // Backend validation using Zod schema
@@ -45,7 +51,7 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (!validationResult.success) {
-            console.error('[auth] Validation failed:', validationResult.error);
+            logAuthFailure(credentials.email, ip, 'validation_error');
             return null;
           }
 
@@ -59,7 +65,14 @@ export const authOptions: NextAuthOptions = {
             .limit(1);
 
           // 2. User not found — return null (do NOT reveal whether user exists)
-          if (!user || !user.isActive) {
+          if (!user) {
+            logAuthFailure(email, ip, 'user_not_found');
+            return null;
+          }
+
+          // Check if user is active
+          if (!user.isActive) {
+            logAuthFailure(email, ip, 'account_inactive');
             return null;
           }
 
@@ -70,10 +83,17 @@ export const authOptions: NextAuthOptions = {
           );
 
           if (!isValidPassword) {
+            logAuthFailure(email, ip, 'invalid_password');
             return null;
           }
 
-          // 4. Return user object — role comes from DB for RBAC
+          // 4. Log successful authentication
+          logAuthSuccess(user.id, ip, {
+            email: user.email,
+            role: user.role,
+          });
+
+          // 5. Return user object — role comes from DB for RBAC
           return {
             id: user.id,
             name: user.username,
@@ -82,7 +102,11 @@ export const authOptions: NextAuthOptions = {
           };
         } catch (error) {
           // Log the error server-side but return null to the client
-          console.error('[auth] authorize error:', error);
+          logAuthFailure(
+            credentials.email,
+            ip,
+            error instanceof Error ? error.message : 'unknown_error'
+          );
           return null;
         }
       },
