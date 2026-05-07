@@ -206,4 +206,5 @@ if (require.main === module) {
   });
 }
 
-export { runLoadTest, LoadTestResult };
+export { runLoadTest };
+export type { LoadTestResult };

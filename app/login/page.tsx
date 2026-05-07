@@ -31,7 +31,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -50,7 +50,7 @@ interface FormErrors {
   general?: string;
 }
 
-export default function LoginPage() {
+function LoginPageContent() {
   // Form mode state
   const [mode, setMode] = useState<FormMode>('signin');
   
@@ -129,11 +129,15 @@ export default function LoginPage() {
       }
       
       // Validate registration fields
+      // Use .innerType() to access shape when schema has .refine()
+      const baseSchema = registerSchema.innerType();
+      
       if (field === 'email') {
-        registerSchema.shape.email.parse(value);
+        baseSchema.shape.email.parse(value);
       } else if (field === 'password') {
-        registerSchema.shape.password.parse(value);
+        baseSchema.shape.password.parse(value);
       } else if (field === 'confirmPassword') {
+        // For confirmPassword, check it against the password field
         if (value !== password) {
           return 'Passwords do not match';
         }
@@ -669,5 +673,24 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+/**
+ * Login Page with Suspense Boundary
+ * Wraps LoginPageContent in Suspense to handle useSearchParams()
+ */
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--gray-100)' }}>
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: 'var(--primary-600)' }}></div>
+          <p className="mt-4 text-lg" style={{ color: 'var(--gray-600)' }}>Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
   );
 }
