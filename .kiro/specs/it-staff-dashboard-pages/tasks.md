@@ -115,7 +115,7 @@ The requirements document is at `.kiro/specs/it-staff-dashboard-pages/requiremen
     - Apply `p-8` padding on the outer `div` inside `<EnterpriseLayout>`
     - Use fluid typography and 8px-grid spacing throughout
     - _Requirements: 1.3, 5.1, 5.6, 5.7, 5.8, 5.9_
-  - [-] 5.6 Write unit tests for the My Tickets page (`app/dashboard/my-tickets/page.test.tsx`)
+  - [x] 5.6 Write unit tests for the My Tickets page (`app/dashboard/my-tickets/page.test.tsx`)
     - Test: unauthenticated users are redirected to `/login`
     - Test: non-IT-staff users are redirected to `/dashboard`
     - Test: loading spinner renders while `status === 'loading'`
@@ -188,19 +188,19 @@ The requirements document is at `.kiro/specs/it-staff-dashboard-pages/requiremen
   - Manually verify (or via test): navigating to `/dashboard/admin` as `ADMIN` renders all three panels; navigating as `it_staff` redirects to `/dashboard`.
   - _Requirements: 1.12, 2.18, 6.8_
 
-- [ ] 9. Write hook unit tests
-  - [ ] 9.1 Write tests for the updated `hooks/useTickets.ts` (`hooks/useTickets.test.ts`)
+- [x] 9. Write hook unit tests
+  - [x] 9.1 Write tests for the updated `hooks/useTickets.ts` (`hooks/useTickets.test.ts`)
     - Test: `assignedTo` param is appended to the fetch URL when provided
     - Test: `isLoading` is `true` before data resolves
     - Test: `tickets` array is populated on successful fetch
     - Test: `isError` is `true` on fetch failure
     - _Requirements: 4.1, 4.2_
-  - [ ] 9.2 Write tests for `hooks/useSystemHealth.ts` (`hooks/useSystemHealth.test.ts`)
+  - [x] 9.2 Write tests for `hooks/useSystemHealth.ts` (`hooks/useSystemHealth.test.ts`)
     - Test: fetches from `/api/health`
     - Test: returns `groqStatus` and `databaseStatus` from response
     - Test: `isError` is `true` on fetch failure
     - _Requirements: 4.5_
-  - [ ] 9.3 Write tests for `hooks/useAuditLog.ts` (`hooks/useAuditLog.test.ts`)
+  - [x] 9.3 Write tests for `hooks/useAuditLog.ts` (`hooks/useAuditLog.test.ts`)
     - Test: fetches from `/api/audit-log?limit=10` by default
     - Test: `entries` array is populated on successful fetch
     - Test: `isError` is `true` on fetch failure
