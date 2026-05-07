@@ -19,9 +19,10 @@ import { count, avg, sql } from 'drizzle-orm';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication (IT staff only)
+    // HIGH-05: allow both it_staff and ADMIN
     const session = await getServerSession(authOptions);
-    if (!session || (session.user as any).role !== 'it_staff') {
+    const userRole = (session?.user as any)?.role;
+    if (!session || (userRole !== 'it_staff' && userRole !== 'ADMIN')) {
       return createErrorResponse('Unauthorized', 401);
     }
 

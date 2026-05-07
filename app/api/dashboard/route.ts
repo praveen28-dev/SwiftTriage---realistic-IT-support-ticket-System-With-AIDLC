@@ -18,9 +18,10 @@ import { eq, count, sql } from 'drizzle-orm';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication
+    // HIGH-05: allow both it_staff and ADMIN
     const session = await getServerSession(authOptions);
-    if (!session || (session.user as any)?.role !== 'it_staff') {
+    const userRole = (session?.user as any)?.role;
+    if (!session || (userRole !== 'it_staff' && userRole !== 'ADMIN')) {
       return NextResponse.json(
         { error: 'Unauthorized - IT staff access required' },
         { status: 401 }

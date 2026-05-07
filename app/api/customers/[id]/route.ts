@@ -3,6 +3,9 @@
  * GET: Get customer by ID with related data
  * PUT: Update customer
  * DELETE: Delete customer
+ *
+ * Security fix HIGH-04:
+ * All three handlers updated to allow both 'it_staff' AND 'ADMIN'.
  */
 
 export const dynamic = 'force-dynamic';
@@ -40,9 +43,10 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Check authentication
+    // HIGH-04: allow both it_staff and ADMIN
     const session = await getServerSession(authOptions);
-    if (!session || (session.user as any)?.role !== 'it_staff') {
+    const _roleGet = (session?.user as any)?.role;
+    if (!session || (_roleGet !== 'it_staff' && _roleGet !== 'ADMIN')) {
       return NextResponse.json(
         { error: 'Unauthorized - IT staff access required' },
         { status: 401 }
@@ -113,9 +117,10 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Check authentication
+    // HIGH-04: allow both it_staff and ADMIN
     const session = await getServerSession(authOptions);
-    if (!session || (session.user as any)?.role !== 'it_staff') {
+    const _rolePut = (session?.user as any)?.role;
+    if (!session || (_rolePut !== 'it_staff' && _rolePut !== 'ADMIN')) {
       return NextResponse.json(
         { error: 'Unauthorized - IT staff access required' },
         { status: 401 }
@@ -171,9 +176,10 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Check authentication
+    // HIGH-04: allow both it_staff and ADMIN
     const session = await getServerSession(authOptions);
-    if (!session || (session.user as any)?.role !== 'it_staff') {
+    const _roleDel = (session?.user as any)?.role;
+    if (!session || (_roleDel !== 'it_staff' && _roleDel !== 'ADMIN')) {
       return NextResponse.json(
         { error: 'Unauthorized - IT staff access required' },
         { status: 401 }

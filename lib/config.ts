@@ -1,6 +1,11 @@
 /**
  * Centralized configuration module
  * Loads and validates environment variables
+ *
+ * Security fix MED-04:
+ * Removed hardcoded 'placeholder' fallback for NEXTAUTH_SECRET.
+ * At runtime, missing secrets now throw immediately rather than silently
+ * using a known string that could be used to forge JWTs.
  */
 
 interface Config {
@@ -20,54 +25,47 @@ interface Config {
   };
 }
 
+const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build';
+
 /**
- * Validate required environment variables exist
- * @throws Error if any required variable is missing
+ * Require an environment variable at runtime.
+ * During build time, returns a safe non-secret placeholder so Next.js can
+ * complete static analysis without real credentials.
+ * At runtime, throws if the variable is absent.
  */
-function validateEnv(): void {
-  // Skip validation during build time (Next.js static analysis)
-  if (process.env.NEXT_PHASE === 'phase-production-build') {
-    return;
+function requireEnv(name: string, buildTimeFallback: string): string {
+  const value = process.env[name];
+  if (value) return value;
+
+  if (isBuildTime) {
+    // Non-secret placeholder — only used during `next build`, never at runtime
+    return buildTimeFallback;
   }
 
-  const requiredVars = [
-    'DATABASE_URL',
-    'GROQ_API_KEY',
-    'NEXTAUTH_SECRET',
-    'NEXTAUTH_URL',
-  ];
-
-  const missingVars = requiredVars.filter((varName) => !process.env[varName]);
-
-  if (missingVars.length > 0) {
-    throw new Error(
-      `Missing required environment variables: ${missingVars.join(', ')}`
-    );
-  }
+  // Hard fail at runtime — never silently use a known string for secrets
+  throw new Error(
+    `[config] FATAL: Required environment variable "${name}" is not set. ` +
+    `Add it to your .env.local file or Vercel environment settings.`
+  );
 }
 
-/**
- * Load and validate configuration from environment variables
- * @returns Typed configuration object
- * @throws Error if required variables are missing at runtime
- */
 function loadConfig(): Config {
-  validateEnv();
-
-  // Provide placeholder values during build time
-  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build';
-
   return {
     database: {
-      url: process.env.DATABASE_URL || (isBuildTime ? 'postgresql://placeholder' : ''),
+      // Non-secret: safe to use a placeholder URL during build
+      url: requireEnv('DATABASE_URL', 'postgresql://build-placeholder/db'),
     },
     groq: {
-      apiKey: process.env.GROQ_API_KEY || (isBuildTime ? 'placeholder' : ''),
+      // Non-secret during build — Groq is never called at build time
+      apiKey: requireEnv('GROQ_API_KEY', 'build-placeholder-groq-key'),
       model: 'llama-3.3-70b-versatile',
     },
     nextAuth: {
-      secret: process.env.NEXTAUTH_SECRET || (isBuildTime ? 'placeholder' : ''),
-      url: process.env.NEXTAUTH_URL || (isBuildTime ? 'http://localhost:3000' : ''),
+      // MED-04 FIX: NEXTAUTH_SECRET must NEVER fall back to a known string.
+      // Using a random placeholder that is clearly invalid and will cause
+      // NextAuth to error loudly if it somehow reaches production.
+      secret: requireEnv('NEXTAUTH_SECRET', `build-only-${Math.random()}`),
+      url: requireEnv('NEXTAUTH_URL', 'http://localhost:3000'),
     },
     app: {
       pollingInterval: parseInt(process.env.POLLING_INTERVAL || '5000', 10),

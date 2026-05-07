@@ -2,6 +2,10 @@
  * Customers API Route
  * GET: List all customers with pagination
  * POST: Create new customer
+ *
+ * Security fix HIGH-04:
+ * Role check updated to allow both 'it_staff' AND 'ADMIN'.
+ * Previously ADMIN users were incorrectly blocked from customer data.
  */
 
 export const dynamic = 'force-dynamic';
@@ -34,9 +38,10 @@ const createCustomerSchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication
+    // HIGH-04: allow both it_staff and ADMIN
     const session = await getServerSession(authOptions);
-    if (!session || (session.user as any)?.role !== 'it_staff') {
+    const userRole = (session?.user as any)?.role;
+    if (!session || (userRole !== 'it_staff' && userRole !== 'ADMIN')) {
       return NextResponse.json(
         { error: 'Unauthorized - IT staff access required' },
         { status: 401 }
@@ -116,9 +121,10 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
+    // HIGH-04: allow both it_staff and ADMIN
     const session = await getServerSession(authOptions);
-    if (!session || (session.user as any)?.role !== 'it_staff') {
+    const userRole = (session?.user as any)?.role;
+    if (!session || (userRole !== 'it_staff' && userRole !== 'ADMIN')) {
       return NextResponse.json(
         { error: 'Unauthorized - IT staff access required' },
         { status: 401 }

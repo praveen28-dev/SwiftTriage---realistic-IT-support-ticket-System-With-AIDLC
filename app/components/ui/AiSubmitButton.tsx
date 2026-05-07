@@ -19,8 +19,6 @@ export function AiSubmitButton({
       style={{
         padding: '0.875rem 1.5rem',
         backgroundColor: isLoading ? '#4338CA' : '#4F46E5',
-        focusRingColor: '#818CF8',
-        focusRingOffsetColor: '#0F172A',
         opacity: disabled && !isLoading ? 0.5 : 1,
         cursor: disabled || isLoading ? 'not-allowed' : 'pointer',
       }}

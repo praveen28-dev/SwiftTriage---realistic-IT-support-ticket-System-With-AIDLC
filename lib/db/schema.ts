@@ -6,6 +6,18 @@
 import { pgTable, uuid, text, varchar, integer, timestamp, decimal, boolean } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
+// ─── Users Table (CRIT-01: database-backed auth with hashed passwords) ────────
+export const users = pgTable('users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  username: varchar('username', { length: 100 }).notNull().unique(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  role: varchar('role', { length: 20 }).notNull().default('end_user'), // 'end_user' | 'it_staff' | 'ADMIN'
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
 // Customers Table
 export const customers = pgTable('customers', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -29,6 +41,7 @@ export const customers = pgTable('customers', {
 export const tickets = pgTable('tickets', {
   id: uuid('id').primaryKey().defaultRandom(),
   customerId: uuid('customer_id').references(() => customers.id),
+  submittedBy: varchar('submitted_by', { length: 255 }), // CRIT-02: track submitter identity
   userInput: text('user_input').notNull(),
   category: varchar('category', { length: 50 }).notNull(),
   urgencyScore: integer('urgency_score').notNull(),
@@ -144,6 +157,8 @@ export const widgetConfigs = pgTable('widget_configs', {
 });
 
 // Export inferred types
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
 export type Customer = typeof customers.$inferSelect;
 export type NewCustomer = typeof customers.$inferInsert;
 export type Ticket = typeof tickets.$inferSelect;
