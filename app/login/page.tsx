@@ -68,8 +68,8 @@ function LoginPageContent() {
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
 
-  // Get callbackUrl from query parameters
-  const callbackUrl = searchParams.get('callbackUrl');
+  // Get callbackUrl from query parameters (handle null searchParams in tests)
+  const callbackUrl = searchParams?.get('callbackUrl');
 
   // Handle role-based redirection after successful authentication
   useEffect(() => {
@@ -129,8 +129,8 @@ function LoginPageContent() {
       }
       
       // Validate registration fields
-      // Use .innerType() to access shape when schema has .refine()
-      const baseSchema = registerSchema.innerType();
+      // Access the underlying schema from ZodEffects using ._def.schema
+      const baseSchema = registerSchema._def.schema;
       
       if (field === 'email') {
         baseSchema.shape.email.parse(value);
