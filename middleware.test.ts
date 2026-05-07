@@ -1,5 +1,5 @@
 /**
- * Integration Tests for RBAC Middleware
+ * Integration Tests for RBAC Middleware and Security Headers
  *
  * Tests Next.js middleware for role-based access control including:
  * - JWT token validation
@@ -9,6 +9,7 @@
  * - CallbackUrl preservation for post-login redirection
  * - Authorization failure logging
  * - Route matching and protection
+ * - Security headers (CSP, X-Frame-Options, X-Content-Type-Options, HSTS)
  *
  * Requirements Coverage:
  * - 5.5: Role extraction from JWT token
@@ -21,6 +22,10 @@
  * - 6.5: Middleware execution before route handlers
  * - 6.6: Authorization failure logging
  * - 6.7: Support for both page routes and API routes
+ * - 12.1: Content-Security-Policy header
+ * - 12.2: X-Frame-Options header
+ * - 12.3: X-Content-Type-Options header
+ * - 12.4: Strict-Transport-Security header
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -597,6 +602,342 @@ describe('RBAC Middleware', () => {
       // Should log success, not error
       expect(mockConsoleLog).toHaveBeenCalled();
       expect(mockConsoleError).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Security Headers', () => {
+    describe('Content-Security-Policy Header', () => {
+      it('should set CSP header on authenticated requests', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+          role: 'it_staff',
+          userId: 'user-123',
+          email: 'staff@example.com',
+        } as any);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        const cspHeader = response.headers.get('Content-Security-Policy');
+        expect(cspHeader).toBeDefined();
+        expect(cspHeader).toContain("default-src 'self'");
+        expect(cspHeader).toContain("frame-ancestors 'none'");
+      });
+
+      it('should set CSP header on unauthenticated redirects', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue(null);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        const cspHeader = response.headers.get('Content-Security-Policy');
+        expect(cspHeader).toBeDefined();
+        expect(cspHeader).toContain("default-src 'self'");
+      });
+
+      it('should set CSP header on 403 responses', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+          role: 'end_user',
+          userId: 'user-456',
+          email: 'user@example.com',
+        } as any);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        const cspHeader = response.headers.get('Content-Security-Policy');
+        expect(cspHeader).toBeDefined();
+        expect(cspHeader).toContain("default-src 'self'");
+      });
+
+      it('should include script-src directive in CSP', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+          role: 'it_staff',
+          userId: 'user-123',
+          email: 'staff@example.com',
+        } as any);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        const cspHeader = response.headers.get('Content-Security-Policy');
+        expect(cspHeader).toContain('script-src');
+      });
+
+      it('should include style-src directive in CSP', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+          role: 'it_staff',
+          userId: 'user-123',
+          email: 'staff@example.com',
+        } as any);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        const cspHeader = response.headers.get('Content-Security-Policy');
+        expect(cspHeader).toContain('style-src');
+      });
+    });
+
+    describe('X-Frame-Options Header', () => {
+      it('should set X-Frame-Options to DENY on authenticated requests', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+          role: 'it_staff',
+          userId: 'user-123',
+          email: 'staff@example.com',
+        } as any);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        expect(response.headers.get('X-Frame-Options')).toBe('DENY');
+      });
+
+      it('should set X-Frame-Options to DENY on unauthenticated redirects', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue(null);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        expect(response.headers.get('X-Frame-Options')).toBe('DENY');
+      });
+
+      it('should set X-Frame-Options to DENY on 403 responses', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+          role: 'end_user',
+          userId: 'user-456',
+          email: 'user@example.com',
+        } as any);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        expect(response.headers.get('X-Frame-Options')).toBe('DENY');
+      });
+
+      it('should set X-Frame-Options on API routes', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+          role: 'it_staff',
+          userId: 'user-123',
+          email: 'staff@example.com',
+        } as any);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/api/tickets')
+        );
+
+        const response = await middleware(request);
+
+        expect(response.headers.get('X-Frame-Options')).toBe('DENY');
+      });
+    });
+
+    describe('X-Content-Type-Options Header', () => {
+      it('should set X-Content-Type-Options to nosniff on authenticated requests', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+          role: 'it_staff',
+          userId: 'user-123',
+          email: 'staff@example.com',
+        } as any);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+      });
+
+      it('should set X-Content-Type-Options to nosniff on unauthenticated redirects', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue(null);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+      });
+
+      it('should set X-Content-Type-Options to nosniff on 403 responses', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+          role: 'end_user',
+          userId: 'user-456',
+          email: 'user@example.com',
+        } as any);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+      });
+
+      it('should set X-Content-Type-Options on API routes', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+          role: 'it_staff',
+          userId: 'user-123',
+          email: 'staff@example.com',
+        } as any);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/api/tickets')
+        );
+
+        const response = await middleware(request);
+
+        expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+      });
+    });
+
+    describe('Strict-Transport-Security Header', () => {
+      const originalNodeEnv = process.env.NODE_ENV;
+
+      afterEach(() => {
+        process.env.NODE_ENV = originalNodeEnv;
+      });
+
+      it('should set HSTS header in production environment', async () => {
+        process.env.NODE_ENV = 'production';
+
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+          role: 'it_staff',
+          userId: 'user-123',
+          email: 'staff@example.com',
+        } as any);
+
+        const request = new NextRequest(
+          new URL('https://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        const hstsHeader = response.headers.get('Strict-Transport-Security');
+        expect(hstsHeader).toBeDefined();
+        expect(hstsHeader).toContain('max-age=31536000');
+        expect(hstsHeader).toContain('includeSubDomains');
+      });
+
+      it('should not set HSTS header in development environment', async () => {
+        process.env.NODE_ENV = 'development';
+
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+          role: 'it_staff',
+          userId: 'user-123',
+          email: 'staff@example.com',
+        } as any);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        const hstsHeader = response.headers.get('Strict-Transport-Security');
+        expect(hstsHeader).toBeNull();
+      });
+
+      it('should not set HSTS header in test environment', async () => {
+        process.env.NODE_ENV = 'test';
+
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+          role: 'it_staff',
+          userId: 'user-123',
+          email: 'staff@example.com',
+        } as any);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        const hstsHeader = response.headers.get('Strict-Transport-Security');
+        expect(hstsHeader).toBeNull();
+      });
+    });
+
+    describe('All Security Headers Together', () => {
+      it('should set all security headers on successful authenticated request', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+          role: 'it_staff',
+          userId: 'user-123',
+          email: 'staff@example.com',
+        } as any);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        // Verify all security headers are present
+        expect(response.headers.get('Content-Security-Policy')).toBeDefined();
+        expect(response.headers.get('X-Frame-Options')).toBe('DENY');
+        expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+        // HSTS only in production, so we don't check it here in test environment
+      });
+
+      it('should set all security headers on redirect responses', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue(null);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        // Verify all security headers are present even on redirects
+        expect(response.headers.get('Content-Security-Policy')).toBeDefined();
+        expect(response.headers.get('X-Frame-Options')).toBe('DENY');
+        expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+      });
+
+      it('should set all security headers on 403 responses', async () => {
+        vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
+          role: 'end_user',
+          userId: 'user-456',
+          email: 'user@example.com',
+        } as any);
+
+        const request = new NextRequest(
+          new URL('http://localhost:3000/dashboard')
+        );
+
+        const response = await middleware(request);
+
+        // Verify all security headers are present on 403 responses
+        expect(response.headers.get('Content-Security-Policy')).toBeDefined();
+        expect(response.headers.get('X-Frame-Options')).toBe('DENY');
+        expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+      });
     });
   });
 });

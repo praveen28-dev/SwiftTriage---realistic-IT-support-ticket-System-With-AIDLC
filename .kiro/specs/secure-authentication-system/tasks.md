@@ -227,8 +227,8 @@ This implementation plan converts the secure authentication system design into a
     - Test end_user can access submit but not dashboard
     - _Requirements: 5.7, 6.1, 6.2, 6.6, 6.7_
 
-- [-] 13. Implement role-based redirection
-  - [~] 13.1 Create post-login redirection logic
+- [x] 13. Implement role-based redirection
+  - [x] 13.1 Create post-login redirection logic
     - Update `lib/auth.ts` NextAuth configuration
     - Add `redirect` callback to handle post-login redirection
     - Read user role from JWT token
@@ -239,20 +239,20 @@ This implementation plan converts the secure authentication system design into a
     - Use Next.js router for client-side redirection
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6_
   
-  - [~] 13.2 Write integration tests for role-based redirection
+  - [x] 13.2 Write integration tests for role-based redirection
     - Test ADMIN redirected to `/dashboard/admin` after login
     - Test it_staff redirected to `/dashboard` after login
     - Test end_user redirected to `/submit` after login
     - Test callbackUrl takes precedence over default redirection
     - _Requirements: 10.1, 10.2, 10.3, 10.5_
 
-- [~] 14. Checkpoint - Verify authorization layer
+- [x] 14. Checkpoint - Verify authorization layer
   - Ensure all tests pass, ask the user if questions arise.
 
 ### Phase 5: UI & Frontend (UX Layer)
 
-- [~] 15. Implement login/register form UI
-  - [~] 15.1 Create login page component
+- [x] 15. Implement login/register form UI
+  - [x] 15.1 Create login page component
     - Create `app/login/page.tsx` file
     - Implement toggleable form with 'signin' and 'register' modes
     - Add email input field with validation feedback
@@ -266,7 +266,7 @@ This implementation plan converts the secure authentication system design into a
     - Make form responsive across mobile, tablet, desktop viewports
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 7.5, 7.6, Accessibility NFR 1, 2, 3_
   
-  - [~] 15.2 Implement client-side validation
+  - [x] 15.2 Implement client-side validation
     - Use `loginSchema` and `registerSchema` from `lib/validations/auth.ts`
     - Validate on input change (real-time feedback)
     - Display email format errors
@@ -276,7 +276,7 @@ This implementation plan converts the secure authentication system design into a
     - Sanitize input to prevent XSS (escape HTML special characters)
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7_
   
-  - [~] 15.3 Implement form submission logic
+  - [x] 15.3 Implement form submission logic
     - Call `/api/register` for registration mode
     - Call NextAuth `signIn('credentials')` for signin mode
     - Handle loading states during submission
@@ -285,7 +285,7 @@ This implementation plan converts the secure authentication system design into a
     - Redirect to appropriate dashboard after successful login
     - _Requirements: 2.3, 2.4, 3.5, 9.1, 9.2, 9.6_
   
-  - [~] 15.4 Write unit tests for login form component
+  - [x] 15.4 Write unit tests for login form component
     - Test mode toggle switches between signin and register
     - Test email validation displays errors for invalid format
     - Test password validation displays errors for weak passwords
@@ -295,8 +295,8 @@ This implementation plan converts the secure authentication system design into a
     - Test error messages have appropriate ARIA attributes
     - _Requirements: 2.1, 2.5, 7.5, 7.6_
 
-- [~] 16. Implement security headers and CSRF protection
-  - [~] 16.1 Configure security headers
+- [x] 16. Implement security headers and CSRF protection
+  - [x] 16.1 Configure security headers
     - Update `next.config.js` or create `middleware.ts` security headers
     - Set `Content-Security-Policy` to prevent inline script execution
     - Set `X-Frame-Options: DENY` to prevent clickjacking
@@ -304,20 +304,20 @@ This implementation plan converts the secure authentication system design into a
     - Set `Strict-Transport-Security` for HTTPS enforcement
     - _Requirements: 12.1, 12.2, 12.3, 12.4_
   
-  - [~] 16.2 Implement CSRF protection
+  - [x] 16.2 Implement CSRF protection
     - Configure NextAuth CSRF token generation (enabled by default)
     - Ensure CSRF tokens included in form submissions
     - Validate CSRF tokens on state-changing requests
     - _Requirements: 12.5, 12.6, 12.7_
   
-  - [~] 16.3 Write integration tests for security headers
+  - [x] 16.3 Write integration tests for security headers
     - Test CSP header present in responses
     - Test X-Frame-Options header present
     - Test X-Content-Type-Options header present
     - Test Strict-Transport-Security header present (HTTPS only)
     - _Requirements: 12.1, 12.2, 12.3, 12.4_
 
-- [~] 17. Implement error handling and logging
+- [-] 17. Implement error handling and logging
   - [~] 17.1 Create logging utilities
     - Create `lib/logging/auth-logger.ts` file
     - Implement `logAuthSuccess(userId: string, ip: string)` function

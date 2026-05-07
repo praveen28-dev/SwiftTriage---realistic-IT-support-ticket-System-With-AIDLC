@@ -8,61 +8,334 @@
  * - Loading states and error boundaries
  * - No social OAuth buttons (credentials only)
  * - CSRF protection via NextAuth
+ * - XSS prevention through input sanitization
+ * 
+ * Accessibility Features:
+ * - WCAG 2.1 AA compliant
+ * - ARIA labels and attributes
+ * - Keyboard navigation support
+ * - Screen reader friendly error messages
+ * - Focus rings with sufficient contrast
+ * 
+ * Requirements Coverage:
+ * - 2.1: Modern, clean UI design
+ * - 2.2: Toggleable signin/register form
+ * - 2.3: Form submission with loading states
+ * - 2.4: Registration functionality
+ * - 2.5: Field-specific error messages
+ * - 2.6: ARIA labels for accessibility
+ * - 2.7: Responsive design
+ * - 7.1-7.7: Frontend validation and sanitization
+ * - 9.1-9.2: API integration
  */
 
 'use client';
 
-import React, { useState } from 'react';
-import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/app/components/ui/Button';
+import { Input } from '@/app/components/ui/Input';
 import { trackLogin, trackError } from '@/lib/analytics';
-import { loginSchema, registerSchema, type LoginInput, type RegisterInput } from '@/lib/validations/auth';
+import { loginSchema, registerSchema } from '@/lib/validations/auth';
+import { ZodError } from 'zod';
+
+type FormMode = 'signin' | 'register';
+
+interface FormErrors {
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  general?: string;
+}
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
+  // Form mode state
+  const [mode, setMode] = useState<FormMode>('signin');
+  
+  // Form field states
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  
+  // UI states
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
 
-  // Check if demo credentials should be shown
-  const showDemoCredentials = process.env.NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS === 'true';
+  // Get callbackUrl from query parameters
+  const callbackUrl = searchParams.get('callbackUrl');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
+  // Handle role-based redirection after successful authentication
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user) {
+      const userRole = (session.user as any).role;
+      
+      // If there's a callbackUrl, redirect there (takes precedence)
+      if (callbackUrl) {
+        router.push(callbackUrl);
+        return;
+      }
+      
+      // Otherwise, redirect based on role
+      switch (userRole) {
+        case 'ADMIN':
+          router.push('/dashboard/admin');
+          break;
+        case 'it_staff':
+          router.push('/dashboard');
+          break;
+        case 'end_user':
+          router.push('/submit');
+          break;
+        default:
+          router.push('/submit'); // Default fallback
+      }
+    }
+  }, [status, session, callbackUrl, router]);
+
+  /**
+   * Sanitize input to prevent XSS attacks
+   * Escapes HTML special characters
+   */
+  const sanitizeInput = (input: string): string => {
+    return input
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#x27;')
+      .replaceAll('/', '&#x2F;');
+  };
+
+  /**
+   * Validate form fields in real-time
+   */
+  const validateField = (field: keyof FormErrors, value: string): string | undefined => {
+    try {
+      if (mode === 'signin') {
+        // Validate login fields
+        if (field === 'email') {
+          loginSchema.shape.email.parse(value);
+        } else if (field === 'password') {
+          loginSchema.shape.password.parse(value);
+        }
+        return undefined;
+      }
+      
+      // Validate registration fields
+      if (field === 'email') {
+        registerSchema.shape.email.parse(value);
+      } else if (field === 'password') {
+        registerSchema.shape.password.parse(value);
+      } else if (field === 'confirmPassword') {
+        if (value !== password) {
+          return 'Passwords do not match';
+        }
+      }
+      return undefined;
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return error.errors[0]?.message;
+      }
+      return 'Invalid input';
+    }
+  };
+
+  /**
+   * Handle input change with real-time validation
+   */
+  const handleInputChange = (field: keyof FormErrors, value: string) => {
+    // Update field value
+    if (field === 'email') setEmail(value);
+    else if (field === 'password') setPassword(value);
+    else if (field === 'confirmPassword') setConfirmPassword(value);
+
+    // Clear general error when user starts typing
+    if (errors.general) {
+      setErrors(prev => ({ ...prev, general: undefined }));
+    }
+
+    // Validate field and update errors
+    const error = validateField(field, value);
+    setErrors(prev => ({ ...prev, [field]: error }));
+  };
+
+  /**
+   * Handle mode toggle between signin and register
+   */
+  const handleModeToggle = () => {
+    setMode(prev => prev === 'signin' ? 'register' : 'signin');
+    setErrors({});
+    setSuccessMessage('');
+    setPassword('');
+    setConfirmPassword('');
+  };
+
+  /**
+   * Validate entire form before submission
+   */
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
 
     try {
+      if (mode === 'signin') {
+        loginSchema.parse({ email, password });
+      } else {
+        registerSchema.parse({ email, password, confirmPassword });
+      }
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof ZodError) {
+        error.errors.forEach(err => {
+          const field = err.path[0] as keyof FormErrors;
+          newErrors[field] = err.message;
+        });
+      }
+      setErrors(newErrors);
+      return false;
+    }
+  };
+
+  /**
+   * Handle form submission for signin
+   */
+  const handleSignIn = async () => {
+    try {
       const result = await signIn('credentials', {
-        username,
+        email: sanitizeInput(email),
         password,
         redirect: false,
       });
 
       if (result?.error) {
-        setError('Invalid credentials. Please try again.');
+        setErrors({ general: 'Invalid credentials. Please try again.' });
         trackError('Login Failed', 'Invalid credentials', 'Login Page');
       } else {
-        // Determine role
-        const role = username.startsWith('it_') ? 'it_staff' : 'end_user';
-        trackLogin('credentials', role);
-        
-        // Redirect based on role
-        if (role === 'it_staff') {
-          router.push('/dashboard');
-        } else {
-          router.push('/submit');
-        }
+        trackLogin('credentials', 'unknown');
+        // Redirection handled by useEffect
       }
     } catch (err: any) {
-      setError('An error occurred during login');
+      setErrors({ general: 'An error occurred during login' });
       trackError('Login Error', err?.message || 'Unknown error', 'Login Page');
-    } finally {
-      setIsLoading(false);
     }
+  };
+
+  /**
+   * Handle form submission for registration
+   */
+  const handleRegister = async () => {
+    try {
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: sanitizeInput(email),
+          password,
+          confirmPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 409) {
+          setErrors({ email: 'Email already exists' });
+        } else if (response.status === 400 && data.details) {
+          // Handle validation errors from backend
+          const newErrors: FormErrors = {};
+          Object.entries(data.details).forEach(([field, messages]) => {
+            if (Array.isArray(messages) && messages.length > 0) {
+              newErrors[field as keyof FormErrors] = messages[0];
+            }
+          });
+          setErrors(newErrors);
+        } else {
+          setErrors({ general: data.error || 'Registration failed' });
+        }
+        trackError('Registration Failed', data.error || 'Unknown error', 'Login Page');
+        return;
+      }
+
+      // Registration successful
+      setSuccessMessage('Account created successfully! Signing you in...');
+      
+      // Automatically sign in after successful registration
+      setTimeout(async () => {
+        await signIn('credentials', {
+          email: sanitizeInput(email),
+          password,
+          redirect: false,
+        });
+      }, 1000);
+    } catch (err: any) {
+      setErrors({ general: 'An error occurred during registration' });
+      trackError('Registration Error', err?.message || 'Unknown error', 'Login Page');
+    }
+  };
+
+  /**
+   * Handle form submission
+   */
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Clear previous messages
+    setErrors({});
+    setSuccessMessage('');
+
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      if (mode === 'signin') {
+        await handleSignIn();
+      } else {
+        await handleRegister();
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /**
+   * Check if form is valid for submission
+   */
+  const isFormValid = (): boolean => {
+    if (mode === 'signin') {
+      return email.length > 0 && password.length > 0 && !errors.email && !errors.password;
+    } else {
+      return (
+        email.length > 0 &&
+        password.length > 0 &&
+        confirmPassword.length > 0 &&
+        !errors.email &&
+        !errors.password &&
+        !errors.confirmPassword
+      );
+    }
+  };
+
+  /**
+   * Get button text based on mode and submission state
+   */
+  const getButtonText = (): string => {
+    if (isSubmitting) {
+      return mode === 'signin' ? 'Signing in...' : 'Creating account...';
+    }
+    return mode === 'signin' ? 'Sign In' : 'Create Account';
   };
 
   return (
@@ -82,7 +355,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
           {/* Logo */}
           <Link href="/" className="inline-flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
             <span className="text-2xl font-black">SwiftTriage</span>
@@ -107,7 +380,7 @@ export default function LoginPage() {
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.2)'
                 }}>
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 </div>
@@ -121,7 +394,7 @@ export default function LoginPage() {
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.2)'
                 }}>
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 </div>
@@ -135,7 +408,7 @@ export default function LoginPage() {
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.2)'
                 }}>
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 </div>
@@ -151,9 +424,9 @@ export default function LoginPage() {
               backgroundColor: 'rgba(255, 255, 255, 0.1)',
               backdropFilter: 'blur(10px)'
             }}>
-              <div className="flex gap-1 mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+              <div className="flex gap-1 mb-3" role="img" aria-label="5 star rating">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <svg key={star} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                 ))}
@@ -164,8 +437,8 @@ export default function LoginPage() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.2)'
-                }}>
-                  JD
+                }} aria-hidden="true">
+                  PA
                 </div>
                 <div>
                   <p className="font-semibold">Praveen A</p>
@@ -178,13 +451,13 @@ export default function LoginPage() {
           {/* Trust Badges */}
           <div className="flex items-center gap-6 text-sm text-white/80">
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                 <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               <span>SOC 2 Certified</span>
             </div>
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
               </svg>
               <span>95% Satisfaction</span>
@@ -193,7 +466,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Side - Login Form */}
+      {/* Right Side - Login/Register Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8" style={{
         backgroundColor: 'var(--gray-100)'
       }}>
@@ -202,7 +475,7 @@ export default function LoginPage() {
           <Link href="/" className="lg:hidden inline-flex items-center gap-3 mb-8 hover:opacity-80 transition-opacity">
             <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{
               color: 'var(--primary-600)'
-            }}>
+            }} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
             <span className="text-2xl font-black" style={{ color: 'var(--gray-900)' }}>SwiftTriage</span>
@@ -211,85 +484,144 @@ export default function LoginPage() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-4xl font-black mb-2" style={{ color: 'var(--gray-900)' }}>
-              Welcome Back
+              {mode === 'signin' ? 'Welcome Back' : 'Create Account'}
             </h1>
             <p className="text-lg" style={{ color: 'var(--gray-600)' }}>
-              Sign in to access your account
+              {mode === 'signin' 
+                ? 'Sign in to access your account' 
+                : 'Get started with SwiftTriage today'}
             </p>
           </div>
 
-          {/* Login Card */}
+          {/* Form Card */}
           <div className="card p-8 mb-6">
-            <form onSubmit={handleSubmit} data-testid="login-form" className="space-y-6">
-              {/* Username Field */}
-              <div>
-                <label htmlFor="username" className="block text-sm font-semibold mb-2" style={{ color: 'var(--gray-700)' }}>
-                  Username
-                </label>
-                <input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="input"
-                  placeholder="Enter your username"
-                  data-testid="login-username"
-                  required
-                />
-                <p className="mt-2 text-xs" style={{ color: 'var(--gray-500)' }}>
-                  💡 Tip: IT staff usernames start with &quot;it_&quot;
-                </p>
-              </div>
+            <form onSubmit={handleSubmit} data-testid="auth-form" className="space-y-6" noValidate>
+              {/* Email Field */}
+              <Input
+                id="email"
+                type="email"
+                label="Email Address"
+                value={email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                error={errors.email}
+                placeholder="you@example.com"
+                required
+                fullWidth
+                aria-label="Email address"
+                aria-required="true"
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'email-error' : undefined}
+                data-testid="auth-email"
+              />
 
               {/* Password Field */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label htmlFor="password" className="block text-sm font-semibold" style={{ color: 'var(--gray-700)' }}>
-                    Password
-                  </label>
-                  <a href="#" className="text-sm font-medium hover:underline" style={{ color: 'var(--primary-600)' }}>
-                    Forgot password?
-                  </a>
-                </div>
-                <input
-                  id="password"
+              <Input
+                id="password"
+                type="password"
+                label="Password"
+                value={password}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                error={errors.password}
+                placeholder={mode === 'signin' ? 'Enter your password' : 'Min 8 chars, 1 uppercase, 1 number'}
+                required
+                fullWidth
+                aria-label="Password"
+                aria-required="true"
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? 'password-error' : undefined}
+                data-testid="auth-password"
+              />
+
+              {/* Confirm Password Field (Register mode only) */}
+              {mode === 'register' && (
+                <Input
+                  id="confirmPassword"
                   type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="input"
-                  placeholder="Enter your password"
-                  data-testid="login-password"
+                  label="Confirm Password"
+                  value={confirmPassword}
+                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                  error={errors.confirmPassword}
+                  placeholder="Re-enter your password"
                   required
+                  fullWidth
+                  aria-label="Confirm password"
+                  aria-required="true"
+                  aria-invalid={!!errors.confirmPassword}
+                  aria-describedby={errors.confirmPassword ? 'confirmPassword-error' : undefined}
+                  data-testid="auth-confirm-password"
                 />
-              </div>
+              )}
 
-              {/* Remember Me */}
-              <div className="flex items-center">
-                <input
-                  id="remember"
-                  type="checkbox"
-                  className="w-4 h-4 rounded"
+              {/* Forgot Password Link (Sign in mode only) */}
+              {mode === 'signin' && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <input
+                      id="remember"
+                      type="checkbox"
+                      className="w-4 h-4 rounded"
+                      style={{
+                        accentColor: 'var(--primary-600)'
+                      }}
+                      aria-label="Remember me for 30 days"
+                    />
+                    <label htmlFor="remember" className="ml-2 text-sm" style={{ color: 'var(--gray-700)' }}>
+                      Remember me for 30 days
+                    </label>
+                  </div>
+                  <button
+                    type="button"
+                    className="text-sm font-medium hover:underline"
+                    style={{ color: 'var(--primary-600)' }}
+                    onClick={() => {
+                      // Password reset functionality is planned for future implementation (Requirement 14)
+                      alert('Password reset functionality coming soon!');
+                    }}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+
+              {/* General Error Message */}
+              {errors.general && (
+                <div 
+                  className="p-4 rounded-lg flex items-start gap-3" 
+                  data-testid="auth-error" 
+                  role="alert"
+                  aria-live="polite"
                   style={{
-                    accentColor: 'var(--primary-600)'
+                    backgroundColor: 'var(--error-100)',
+                    border: `1px solid var(--error-200)`
                   }}
-                />
-                <label htmlFor="remember" className="ml-2 text-sm" style={{ color: 'var(--gray-700)' }}>
-                  Remember me for 30 days
-                </label>
-              </div>
-
-              {/* Error Message */}
-              {error && (
-                <div className="p-4 rounded-lg flex items-start gap-3" data-testid="login-error" style={{
-                  backgroundColor: 'var(--error-100)',
-                  border: `1px solid var(--error-200)`
-                }}>
+                >
                   <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{
                     color: 'var(--error-600)'
-                  }}>
+                  }} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <p className="text-sm" style={{ color: 'var(--error-700)' }}>{error}</p>
+                  <p className="text-sm" style={{ color: 'var(--error-700)' }}>{errors.general}</p>
+                </div>
+              )}
+
+              {/* Success Message */}
+              {successMessage && (
+                <div 
+                  className="p-4 rounded-lg flex items-start gap-3" 
+                  data-testid="auth-success"
+                  role="alert"
+                  aria-live="polite"
+                  style={{
+                    backgroundColor: 'var(--success-100)',
+                    border: `1px solid var(--success-200)`
+                  }}
+                >
+                  <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{
+                    color: 'var(--success-600)'
+                  }} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm" style={{ color: 'var(--success-700)' }}>{successMessage}</p>
                 </div>
               )}
 
@@ -298,86 +630,33 @@ export default function LoginPage() {
                 type="submit"
                 variant="primary"
                 size="lg"
-                loading={isLoading}
+                loading={isSubmitting}
+                disabled={!isFormValid() || isSubmitting}
                 className="w-full"
+                aria-label={mode === 'signin' ? 'Sign in to your account' : 'Create your account'}
               >
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                {getButtonText()}
               </Button>
             </form>
 
-            {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t" style={{ borderColor: 'var(--gray-300)' }} />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 text-sm" style={{
-                  backgroundColor: 'var(--white)',
-                  color: 'var(--gray-500)'
-                }}>
-                  Or continue with
-                </span>
-              </div>
-            </div>
-
-            {/* Social Login */}
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                className="btn flex items-center justify-center gap-2"
-                style={{
-                  backgroundColor: 'var(--white)',
-                  color: 'var(--gray-700)',
-                  border: `2px solid var(--gray-300)`
-                }}
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                Google
-              </button>
-              <button
-                type="button"
-                className="btn flex items-center justify-center gap-2"
-                style={{
-                  backgroundColor: 'var(--white)',
-                  color: 'var(--gray-700)',
-                  border: `2px solid var(--gray-300)`
-                }}
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"/>
-                </svg>
-                Microsoft
-              </button>
+            {/* Mode Toggle */}
+            <div className="mt-6 text-center">
+              <p className="text-sm" style={{ color: 'var(--gray-600)' }}>
+                {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}
+                {' '}
+                <button
+                  type="button"
+                  onClick={handleModeToggle}
+                  className="font-semibold hover:underline"
+                  style={{ color: 'var(--primary-600)' }}
+                  data-testid="mode-toggle"
+                  aria-label={mode === 'signin' ? 'Switch to create account' : 'Switch to sign in'}
+                >
+                  {mode === 'signin' ? 'Create Account' : 'Sign In'}
+                </button>
+              </p>
             </div>
           </div>
-
-          {/* Demo Credentials - Only show when explicitly enabled */}
-          {showDemoCredentials && (
-            <div className="card p-6" data-testid="demo-credentials">
-              <p className="text-sm font-semibold mb-3 text-center" style={{ color: 'var(--gray-700)' }}>
-                Demo Credentials
-              </p>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between p-3 rounded-lg" style={{
-                  backgroundColor: 'var(--gray-200)'
-                }}>
-                  <span style={{ color: 'var(--gray-600)' }}>End User:</span>
-                  <code className="font-mono" style={{ color: 'var(--gray-900)' }}>user / password</code>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg" style={{
-                  backgroundColor: 'var(--primary-100)'
-                }}>
-                  <span style={{ color: 'var(--gray-600)' }}>IT Staff:</span>
-                  <code className="font-mono" style={{ color: 'var(--gray-900)' }}>it_admin / password</code>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Back to Home */}
           <div className="mt-6 text-center">

@@ -8,6 +8,10 @@
  * - Role-based access control (RBAC) via JWT token
  * - Backend validation using Zod schemas
  * - HttpOnly cookies for token storage
+ * - CSRF protection (enabled by default in NextAuth.js)
+ *   - CSRF tokens automatically generated and validated
+ *   - Tokens included in all state-changing requests
+ *   - Double-submit cookie pattern implementation
  */
 
 import { NextAuthOptions } from 'next-auth';
@@ -101,6 +105,35 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = token.userId as string;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // Try to extract callbackUrl from query parameters first
+      try {
+        const urlObj = new URL(url);
+        const callbackUrl = urlObj.searchParams.get('callbackUrl');
+        if (callbackUrl) {
+          // Security: Only allow callbacks to the same origin
+          if (callbackUrl.startsWith(baseUrl) || callbackUrl.startsWith('/')) {
+            return callbackUrl.startsWith('/') ? `${baseUrl}${callbackUrl}` : callbackUrl;
+          }
+          // If callbackUrl is present but invalid (external URL), return baseUrl for security
+          return baseUrl;
+        }
+      } catch (error) {
+        // Invalid URL, fall through to default
+        console.error('[auth] Invalid redirect URL:', error);
+      }
+      
+      // If there's no callbackUrl parameter and URL starts with baseUrl, use it
+      // But only if it's not the auth callback URL itself
+      if (url.startsWith(baseUrl) && !url.includes('/api/auth/callback')) {
+        return url;
+      }
+      
+      // Default: return baseUrl
+      // Note: We can't access the token directly in the redirect callback,
+      // so we'll handle role-based redirection on the client side after sign-in
+      return baseUrl;
     },
   },
 
