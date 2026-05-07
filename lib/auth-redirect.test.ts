@@ -149,7 +149,16 @@ describe('Role-Based Redirection', () => {
         role: 'ADMIN' as const,
       };
 
-      const token = {};
+      const token = {
+        role: 'ADMIN' as const,
+        userId: 'admin-123',
+        email: 'admin@example.com',
+        name: 'Admin User',
+        sub: 'admin-123',
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 8 * 60 * 60,
+        jti: 'unique-jwt-id',
+      };
 
       const result = await jwtCallback({
         token,
@@ -176,7 +185,16 @@ describe('Role-Based Redirection', () => {
         role: 'it_staff' as const,
       };
 
-      const token = {};
+      const token = {
+        role: 'it_staff' as const,
+        userId: 'staff-456',
+        email: 'staff@example.com',
+        name: 'IT Staff',
+        sub: 'staff-456',
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 8 * 60 * 60,
+        jti: 'unique-jwt-id',
+      };
 
       const result = await jwtCallback({
         token,
@@ -203,7 +221,16 @@ describe('Role-Based Redirection', () => {
         role: 'end_user' as const,
       };
 
-      const token = {};
+      const token = {
+        role: 'end_user' as const,
+        userId: 'user-789',
+        email: 'user@example.com',
+        name: 'End User',
+        sub: 'user-789',
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 8 * 60 * 60,
+        jti: 'unique-jwt-id',
+      };
 
       const result = await jwtCallback({
         token,
@@ -229,12 +256,13 @@ describe('Role-Based Redirection', () => {
         user: {
           name: 'Admin User',
           email: 'admin@example.com',
+          role: 'ADMIN' as const,
         },
         expires: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
       };
 
       const mockToken = {
-        role: 'ADMIN',
+        role: 'ADMIN' as const,
         userId: 'admin-123',
         email: 'admin@example.com',
         name: 'Admin User',
@@ -249,7 +277,7 @@ describe('Role-Based Redirection', () => {
         token: mockToken,
         user: undefined as any,
         newSession: undefined,
-        trigger: 'getSession',
+        trigger: 'update',
       });
 
       expect((result.user as any).role).toBe('ADMIN');
@@ -266,12 +294,13 @@ describe('Role-Based Redirection', () => {
         user: {
           name: 'IT Staff',
           email: 'staff@example.com',
+          role: 'it_staff' as const,
         },
         expires: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
       };
 
       const mockToken = {
-        role: 'it_staff',
+        role: 'it_staff' as const,
         userId: 'staff-456',
         email: 'staff@example.com',
         name: 'IT Staff',
@@ -286,7 +315,7 @@ describe('Role-Based Redirection', () => {
         token: mockToken,
         user: undefined as any,
         newSession: undefined,
-        trigger: 'getSession',
+        trigger: 'update',
       });
 
       expect((result.user as any).role).toBe('it_staff');
@@ -303,12 +332,13 @@ describe('Role-Based Redirection', () => {
         user: {
           name: 'End User',
           email: 'user@example.com',
+          role: 'end_user' as const,
         },
         expires: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
       };
 
       const mockToken = {
-        role: 'end_user',
+        role: 'end_user' as const,
         userId: 'user-789',
         email: 'user@example.com',
         name: 'End User',
@@ -323,7 +353,7 @@ describe('Role-Based Redirection', () => {
         token: mockToken,
         user: undefined as any,
         newSession: undefined,
-        trigger: 'getSession',
+        trigger: 'update',
       });
 
       expect((result.user as any).role).toBe('end_user');
@@ -414,7 +444,16 @@ describe('Role-Based Redirection', () => {
 
       // Step 2: JWT callback embeds role
       const token = await jwtCallback({
-        token: {},
+        token: {
+          role: 'ADMIN' as const,
+          userId: 'admin-123',
+          email: 'admin@example.com',
+          name: 'Admin User',
+          sub: 'admin-123',
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 8 * 60 * 60,
+          jti: 'unique-jwt-id',
+        },
         user: mockUser,
         trigger: 'signIn',
         isNewUser: false,
@@ -430,6 +469,7 @@ describe('Role-Based Redirection', () => {
           user: {
             name: mockUser.name,
             email: mockUser.email,
+            role: 'ADMIN' as const,
           },
           expires: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
         },
@@ -442,7 +482,7 @@ describe('Role-Based Redirection', () => {
         },
         user: undefined as any,
         newSession: undefined,
-        trigger: 'getSession',
+        trigger: 'update',
       });
 
       expect((session.user as any).role).toBe('ADMIN');

@@ -115,7 +115,7 @@ The requirements document is at `.kiro/specs/it-staff-dashboard-pages/requiremen
     - Apply `p-8` padding on the outer `div` inside `<EnterpriseLayout>`
     - Use fluid typography and 8px-grid spacing throughout
     - _Requirements: 1.3, 5.1, 5.6, 5.7, 5.8, 5.9_
-  - [ ] 5.6 Write unit tests for the My Tickets page (`app/dashboard/my-tickets/page.test.tsx`)
+  - [-] 5.6 Write unit tests for the My Tickets page (`app/dashboard/my-tickets/page.test.tsx`)
     - Test: unauthenticated users are redirected to `/login`
     - Test: non-IT-staff users are redirected to `/dashboard`
     - Test: loading spinner renders while `status === 'loading'`

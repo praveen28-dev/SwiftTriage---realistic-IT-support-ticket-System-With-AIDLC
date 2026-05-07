@@ -815,10 +815,12 @@ describe('RBAC Middleware', () => {
       const originalNodeEnv = process.env.NODE_ENV;
 
       afterEach(() => {
+        delete (process.env as any).NODE_ENV;
         process.env.NODE_ENV = originalNodeEnv;
       });
 
       it('should set HSTS header in production environment', async () => {
+        delete (process.env as any).NODE_ENV;
         process.env.NODE_ENV = 'production';
 
         vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
@@ -840,6 +842,7 @@ describe('RBAC Middleware', () => {
       });
 
       it('should not set HSTS header in development environment', async () => {
+        delete (process.env as any).NODE_ENV;
         process.env.NODE_ENV = 'development';
 
         vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
@@ -859,6 +862,7 @@ describe('RBAC Middleware', () => {
       });
 
       it('should not set HSTS header in test environment', async () => {
+        delete (process.env as any).NODE_ENV;
         process.env.NODE_ENV = 'test';
 
         vi.mocked(nextAuthJwt.getToken).mockResolvedValue({
